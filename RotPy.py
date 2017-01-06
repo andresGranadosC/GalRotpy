@@ -1,7 +1,33 @@
+"""
+    RotPy.py - a Python-based tool for parametrizing galaxy potential by rotation curve
+
+    Copyright (c) 2016 Andrés Granados
+    All rights reserved.
+
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the
+    "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so, subject to
+    the following conditions:
+
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+    Created on Fri Jan 6 07:00:00 MST 2017
+"""
+
 from matplotlib.widgets import Slider, Button, RadioButtons, CheckButtons
 from matplotlib import pyplot as plt
-#from PyQt4 import QtGui, QtCore
-#from PyQt4.QtCore import Qt
 import numpy as np
 from galpy.potential import MiyamotoNagaiPotential, NFWPotential, RazorThinExponentialDiskPotential
 from galpy.potential import calcRotcurve
@@ -29,7 +55,7 @@ h_r=3.3
 amp4=1e3
 
 name='NGC6361'
-tt=Table.Table.read('/Users/andresgranados/Documents/ionized_gas_califa/rot_curves/rot_curves_'+name+'.txt', format='ascii.tab')
+tt=Table.Table.read('rot_curve_'+name+'.txt', format='ascii.tab')
 r_califa=tt['r']
 v_c_califa=tt['vel']
 v_c_err_califa = tt['e_vel']
@@ -42,9 +68,6 @@ MN_Thin_Disk_p= MiyamotoNagaiPotential(amp=amp2*units.Msun,a=a2*units.kpc,b=b2*u
 MN_Thick_Disk_p= MiyamotoNagaiPotential(amp=amp3*units.Msun,a=a3*units.kpc,b=b3*units.kpc,normalize=False,ro=8*units.kpc, vo=220*units.km/units.s)
 EX_Disk_p = RazorThinExponentialDiskPotential(amp=amp4*(units.Msun/(units.pc**2)), hr=h_r*units.kpc, maxiter=20, tol=0.001, normalize=False, ro=8*units.kpc, vo=220*units.km/units.s, new=True, glorder=100)
 NFW_p = NFWPotential(amp=amp5*units.Msun, a=a5*units.kpc, normalize=False)
-
-#v_circ=calcRotcurve([mp_Bulge, mp_Disk, NFWp], lista, phi=None)*220
-
 
 MN_Bulge = calcRotcurve(MN_Bulge_p, lista, phi=None)*220
 MN_Thin_Disk = calcRotcurve(MN_Thin_Disk_p, lista, phi=None)*220
@@ -77,15 +100,6 @@ MN_Thin_Disk_p= MiyamotoNagaiPotential(amp=amp2*units.Msun,a=a2*units.kpc,b=b2*u
 MN_Thick_Disk_p= MiyamotoNagaiPotential(amp=amp3*units.Msun,a=a3*units.kpc,b=b3*units.kpc,normalize=False,ro=8*units.kpc, vo=220*units.km/units.s)
 EX_Disk_p = RazorThinExponentialDiskPotential(amp=amp4*(units.Msun/(units.pc**2)), hr=h_r*units.kpc, maxiter=20, tol=0.001, normalize=False, ro=8*units.kpc, vo=220*units.km/units.s, new=True, glorder=100)
 NFW_p = NFWPotential(amp=amp5*units.Msun, a=a5*units.kpc, normalize=False)
-
-"""
-MN_Bulge_p= MiyamotoNagaiPotential(amp=(amp1*10**10)*units.Msun,a=a1*units.kpc,b=b1*units.kpc,normalize=False,ro=8*units.kpc, vo=220*units.km/units.s)
-MN_Thin_Disk_p= MiyamotoNagaiPotential(amp=(amp2*10**11)*units.Msun,a=a2*units.kpc,b=b2*units.kpc,normalize=False,ro=8*units.kpc, vo=220*units.km/units.s)
-MN_Thick_Disk_p= MiyamotoNagaiPotential(amp=(amp3*10**11)*units.Msun,a=a3*units.kpc,b=b3*units.kpc,normalize=False,ro=8*units.kpc, vo=220*units.km/units.s)
-NFW_p = NFWPotential(amp=(amp3*10**11)*units.Msun, a=a3*units.kpc, normalize=False)
-"""
-#v_circ=calcRotcurve([mp_Bulge, mp_Disk, NFWp], lista, phi=None)*220
-
 
 MN_Bulge = calcRotcurve(MN_Bulge_p, lista, phi=None)*220
 MN_Thin_Disk = calcRotcurve(MN_Thin_Disk_p, lista, phi=None)*220
@@ -133,8 +147,6 @@ MN_ed_amp_ax = fig.add_axes((0.05,0.39,0.17,0.03))
 MN_ed_amp_s = Slider(MN_ed_amp_ax, r"M($M_\odot/pc^2$)", 1e2, 1.3e3, valinit=1e3, color='cyan', valfmt='%1.3E')
 MN_ed_a_ax = fig.add_axes((0.05,0.36,0.17,0.03))
 MN_ed_a_s = Slider(MN_ed_a_ax, "h_r (kpc)", 2, 6, valinit=3.3, color='cyan')
-#MN_ed_b_ax = fig.add_axes((0.05,0.33,0.17,0.03))
-#MN_ed_b_s = Slider(MN_ed_b_ax, "h_z (kpc)", 0, 10, valinit=7, color='cyan')
 
 NFW_amp_ax = fig.add_axes((0.05,0.27,0.17,0.03))
 NFW_amp_s = Slider(NFW_amp_ax, r"M($M_\odot$)", 1e10, 1e12, valinit=6000*2.32e7, color='green', valfmt='%1.3E')
