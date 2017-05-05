@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
     GalRotpy.py - a Python-based tool for parametrizing galaxy potential by rotation curve
 
