@@ -1,2 +1,2 @@
-# RotPy
-A Python-based tool for parametrizing galaxy potential by rotation curve
+# GalRotpy
+A Python-based tool for parametrizing the rotation curve and the galaxy potential of disk-like galaxies.
