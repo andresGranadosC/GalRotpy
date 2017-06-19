@@ -30,7 +30,7 @@
 from matplotlib.widgets import Slider, Button, RadioButtons, CheckButtons # Matplotlib widgets
 from matplotlib import pyplot as plt # Plotting interface
 import numpy as np # Array managing
-from galpy.potential import MiyamotoNagaiPotential, NFWPotential, RazorThinExponentialDiskPotential # GALPY potentials
+from galpy.potential import MiyamotoNagaiPotential, NFWPotential, RazorThinExponentialDiskPotential, BurkertPotential # GALPY potentials
 from galpy.potential import calcRotcurve # composed rotation curve calculation for plotting
 from astropy import units # Physical/real units data managing
 from astropy import table as Table # For fast and easy reading / writing with tables using numpy library
@@ -52,13 +52,17 @@ a3=input_params['a (kpc)'][2]
 b3=input_params['b (kpc)'][2]
 amp3=input_params['mass'][2]
 
-# Initial parameters for Halo potential
+# Initial parameters for Dark Halo potential
 a5=input_params['a (kpc)'][4]
 amp5=input_params['mass'][4]
 
 # Initial parameters for exponential disk potential
 h_r=input_params['a (kpc)'][3]
 amp4=input_params['mass'][3]
+
+# Initial parameters for Burkert potential
+a6=input_params['a (kpc)'][5]
+amp6=input_params['mass'][5]
 
 x_offset = 0 #0.35 # It defines a radial coordinate offset as user input
 r_0=1*units.kpc
@@ -78,14 +82,16 @@ MN_Thin_Disk_p= MiyamotoNagaiPotential(amp=amp2*units.Msun,a=a2*units.kpc,b=b2*u
 MN_Thick_Disk_p= MiyamotoNagaiPotential(amp=amp3*units.Msun,a=a3*units.kpc,b=b3*units.kpc,normalize=False,ro=r_0, vo=v_0)
 EX_Disk_p = RazorThinExponentialDiskPotential(amp=amp4*(units.Msun/(units.pc**2)), hr=h_r*units.kpc, maxiter=20, tol=0.001, normalize=False, ro=r_0, vo=v_0, new=True, glorder=100)
 NFW_p = NFWPotential(amp=amp5*units.Msun, a=a5*units.kpc, normalize=False, ro=r_0, vo=v_0)
+BK_p = BurkertPotential(amp=amp6*units.Msun/(units.kpc)**3, a=a6*units.kpc, normalize=False, ro=r_0, vo=v_0)
 # Circular velocities in km/s
 MN_Bulge = calcRotcurve(MN_Bulge_p, lista, phi=None)*220
 MN_Thin_Disk = calcRotcurve(MN_Thin_Disk_p, lista, phi=None)*220
 MN_Thick_Disk = calcRotcurve(MN_Thick_Disk_p, lista, phi=None)*220
 EX_Disk = calcRotcurve(EX_Disk_p, lista, phi=None)*220
 NFW = calcRotcurve(NFW_p, lista, phi=None)*220
+BK = calcRotcurve(BK_p, lista, phi=None)*220
 # Circular velocity for the composition of 5 potentials in km/s
-v_circ_comp = calcRotcurve([MN_Bulge_p,MN_Thin_Disk_p,MN_Thick_Disk_p, EX_Disk_p, NFW_p], lista, phi=None)*220
+v_circ_comp = calcRotcurve([MN_Bulge_p,MN_Thin_Disk_p,MN_Thick_Disk_p, EX_Disk_p, NFW_p, BK_p], lista, phi=None)*220
 
 # Global variables for the plot
 fig = plt.figure()
@@ -97,6 +103,7 @@ MN_td_plot, = ax.plot(lista, MN_Thin_Disk, linestyle='--', c='red')
 MN_tkd_plot, = ax.plot(lista, MN_Thick_Disk, linestyle='--', c='blue')
 EX_d_plot, = ax.plot(lista, EX_Disk, linestyle='--', c='cyan')
 NFW_plot, = ax.plot(lista, NFW, linestyle='--', c='green')
+BK_plot, = ax.plot(lista, BK, linestyle='--', c='orange')
 CV_galaxy = ax.errorbar(r_data, v_c_data, v_c_err_data,  c='k', fmt='', ls='none')
 CV_galaxy_dot = ax.scatter(r_data, v_c_data, c='k')
 # Composed rotation curve
@@ -115,26 +122,29 @@ MN_Thin_Disk_p= MiyamotoNagaiPotential(amp=amp2*units.Msun,a=a2*units.kpc,b=b2*u
 MN_Thick_Disk_p= MiyamotoNagaiPotential(amp=amp3*units.Msun,a=a3*units.kpc,b=b3*units.kpc,normalize=False,ro=r_0, vo=v_0)
 EX_Disk_p = RazorThinExponentialDiskPotential(amp=amp4*(units.Msun/(units.pc**2)), hr=h_r*units.kpc, maxiter=20, tol=0.001, normalize=False, ro=r_0, vo=v_0, new=True, glorder=100)
 NFW_p = NFWPotential(amp=amp5*units.Msun, a=a5*units.kpc, normalize=False)
+BK_p = BurkertPotential(amp=amp6*units.Msun/(units.kpc)**3, a=a6*units.kpc, normalize=False, ro=r_0, vo=v_0)
 
 MN_Bulge = calcRotcurve(MN_Bulge_p, lista, phi=None)*220
 MN_Thin_Disk = calcRotcurve(MN_Thin_Disk_p, lista, phi=None)*220
 MN_Thick_Disk = calcRotcurve(MN_Thick_Disk_p, lista, phi=None)*220
 EX_Disk = calcRotcurve(EX_Disk_p, lista, phi=None)*220
 NFW = calcRotcurve(NFW_p, lista, phi=None)*220
-v_circ_comp = calcRotcurve([MN_Bulge_p,MN_Thin_Disk_p,MN_Thick_Disk_p, NFW_p], lista, phi=None)*220
+BK = calcRotcurve(BK_p, lista, phi=None)*220
+v_circ_comp = calcRotcurve([MN_Bulge_p,MN_Thin_Disk_p,MN_Thick_Disk_p, NFW_p, BK_p], lista, phi=None)*220
 
 MN_b_plot, = ax.plot(lista, MN_Bulge, linestyle='--', c='gray')
 MN_td_plot, = ax.plot(lista, MN_Thin_Disk, linestyle='--', c='red')
 MN_tkd_plot, = ax.plot(lista, MN_Thick_Disk, linestyle='--', c='blue')
 EX_d_plot, = ax.plot(lista, EX_Disk, linestyle='--', c='cyan')
 NFW_plot, = ax.plot(lista, NFW, linestyle='--', c='green')
+BK_plot, = ax.plot(lista, BK, linestyle='--', c='orange')
 CV_galaxy = ax.errorbar(r_data, v_c_data, v_c_err_data,  c='k', fmt='', ls='none')
 CV_galaxy_dot = ax.scatter(r_data, v_c_data, c='k')
 v_circ_comp_plot, = ax.plot(lista, v_circ_comp, c='k')
 
 # Checkbox for selecting the potentials to compose the rotation
 rax = plt.axes((0.05,0.8,0.2,0.15))
-check = CheckButtons(rax, ('MN Bulge (GRAY)', 'MN Thin Disk (RED)', 'MN Thick Disk (BLUE)', 'Exp. Disk (CYAN)', 'NFW - Halo (GREEN)'), (True, True, True, True, True))
+check = CheckButtons(rax, ('MN Bulge (GRAY)', 'MN Thin Disk (RED)', 'MN Thick Disk (BLUE)', 'Exp. Disk (CYAN)', 'NFW - Halo (GREEN)', 'BURKERT - Halo ()'), (True, True, True, True, True, True))
 # Sliders for Bulge - gray
 MN_b_amp_ax = fig.add_axes((0.05,0.75,0.17,0.03))
 MN_b_amp_s = Slider(MN_b_amp_ax, r"M($M_\odot$)", input_params['mass'][0]/(10**input_params['threshold_mass'][0]), input_params['mass'][0]*(10**input_params['threshold_mass'][0]), valinit=input_params['mass'][0], color='gray', valfmt='%1.3E')
@@ -168,6 +178,12 @@ NFW_amp_ax = fig.add_axes((0.05,0.27,0.17,0.03))
 NFW_amp_s = Slider(NFW_amp_ax, r"M($M_\odot$)", input_params['mass'][4]/(10*input_params['threshold_mass'][4]), input_params['mass'][4]*(10**input_params['threshold_mass'][4]), valinit=input_params['mass'][4], color='green', valfmt='%1.3E')
 NFW_a_ax = fig.add_axes((0.05,0.24,0.17,0.03))
 NFW_a_s = Slider(NFW_a_ax, "a (kpc)", input_params['a (kpc)'][4]*(1-0.01*input_params['threshold_a'][4]), input_params['a (kpc)'][4]*(1+0.01*input_params['threshold_a'][4]), valinit=input_params['a (kpc)'][4], color='green')
+# Sliders for Burkert Halo - orange
+BK_amp_ax = fig.add_axes((0.05,0.15,0.17,0.03))
+BK_amp_s = Slider(BK_amp_ax, r"M($M_\odot$)", input_params['mass'][5]/(10*input_params['threshold_mass'][5]), input_params['mass'][5]*(10**input_params['threshold_mass'][5]), valinit=input_params['mass'][5], color='orange', valfmt='%1.3E')
+BK_a_ax = fig.add_axes((0.05,0.12,0.17,0.03))
+BK_a_s = Slider(BK_a_ax, "a (kpc)", input_params['a (kpc)'][5]*(1-0.01*input_params['threshold_a'][5]), input_params['a (kpc)'][5]*(1+0.01*input_params['threshold_a'][5]), valinit=input_params['a (kpc)'][5], color='orange')
+
 # Function for setting new parameters for each potential
 def MN_b_amp_s_func(val):
     if MN_b_plot.get_visible() == True:
@@ -248,11 +264,23 @@ def MN_ed_a_s_func(val):
         h_r=val*1
         EX_Disk_p = RazorThinExponentialDiskPotential(amp=amp4*(units.Msun/(units.pc**2)), hr=val*units.kpc, maxiter=20, tol=0.001, normalize=False, ro=r_0, vo=v_0, new=True, glorder=100)
         update_rot_curve()
-    
+def BK_amp_s_func(val):
+    if BK_plot.get_visible() == True:
+        global BK_p, amp6,a6
+        amp6=val*1
+        BK_p = BurkertPotential(amp=val*units.Msun/(units.kpc)**3, a=a6*units.kpc, normalize=False, ro=r_0, vo=v_0)
+        update_rot_curve()
+def BK_a_s_func(val):
+    if BK_plot.get_visible() == True:
+        global BK_p, amp6,a6
+        a6=val*1
+        BK_p = BurkertPotential(amp=amp6*units.Msun/(units.kpc)**3, a=val*units.kpc, normalize=False, ro=r_0, vo=v_0)
+        update_rot_curve()
+
 # update rotation curve for the selected and the composed potential
 def update_rot_curve():
     ax.cla()
-    global MN_b_plot, MN_Bulge_p, MN_Thin_Disk_p,MN_Thick_Disk_p, MN_td_plot,MN_tkd_plot, NFW_p, NFW_plot, EX_d_plot, EX_Disk_p, CV_galaxy, CV_galaxy_dot
+    global MN_b_plot, MN_Bulge_p, MN_Thin_Disk_p,MN_Thick_Disk_p, MN_td_plot,MN_tkd_plot, NFW_p, NFW_plot, EX_d_plot, EX_Disk_p, CV_galaxy, CV_galaxy_dot, BK_p, BK_plot
     composite_pot_array=[]
     ax.set_xlabel(r'$R$ (kpc)', fontsize=20)
     ax.set_ylabel(r'$v_c$ (km/s)', fontsize=20)
@@ -278,6 +306,10 @@ def update_rot_curve():
         EX_Disk = calcRotcurve(EX_Disk_p, lista, phi=None)*220
         EX_d_plot, = ax.plot(lista, EX_Disk, linestyle='--', c='cyan')
         composite_pot_array.append(EX_Disk_p)
+    if BK_plot.get_visible() == True:
+        BK = calcRotcurve(BK_p, lista, phi=None)*220
+        BK_plot, = ax.plot(lista, BK, linestyle='--', c='orange')
+        composite_pot_array.append(BK_p)
     CV_galaxy = ax.errorbar(r_data, v_c_data, v_c_err_data,  c='k', fmt='', ls='none')
     CV_galaxy_dot = ax.scatter(r_data, v_c_data, c='k')
     v_circ_comp = calcRotcurve(composite_pot_array, lista, phi=None)*220
@@ -288,7 +320,8 @@ MN_Thin_Disk = calcRotcurve(MN_Thin_Disk_p, lista, phi=None)*220
 MN_Thick_Disk = calcRotcurve(MN_Thick_Disk_p, lista, phi=None)*220
 EX_Disk = calcRotcurve(EX_Disk_p, lista, phi=None)*220
 NFW = calcRotcurve(NFW_p, lista, phi=None)*220
-v_circ_comp = calcRotcurve([MN_Bulge_p,MN_Thin_Disk_p,MN_Thick_Disk_p, NFW_p], lista, phi=None)*220
+BK = calcRotcurve(BK_p, lista, phi=None)*220
+v_circ_comp = calcRotcurve([MN_Bulge_p,MN_Thin_Disk_p,MN_Thick_Disk_p, NFW_p, BK_p], lista, phi=None)*220
 
 ax.set_xlabel(r'$R$ (kpc)', fontsize=20)
 ax.set_ylabel(r'$v_c$ (km/s)', fontsize=20)
@@ -299,6 +332,7 @@ MN_td_plot, = ax.plot(lista, MN_Thin_Disk, linestyle='--', c='red')
 MN_tkd_plot, = ax.plot(lista, MN_Thick_Disk, linestyle='--', c='blue')
 EX_d_plot, = ax.plot(lista, EX_Disk, linestyle='--', c='cyan')
 NFW_plot, = ax.plot(lista, NFW, linestyle='--', c='green')
+BK_plot, = ax.plot(lista, BK, linestyle='--', c='orange')
 CV_galaxy = ax.errorbar(r_data, v_c_data, v_c_err_data,  c='k', fmt='', ls='none')
 CV_galaxy_dot = ax.scatter(r_data, v_c_data, c='k')
 v_circ_comp_plot, = ax.plot(lista, v_circ_comp, c='k')
@@ -316,6 +350,8 @@ MN_tkd_a_s.on_changed(MN_tkd_a_s_func)
 MN_tkd_b_s.on_changed(MN_tkd_b_s_func)
 NFW_amp_s.on_changed(NFW_amp_s_func)
 NFW_a_s.on_changed(NFW_a_s_func)
+BK_amp_s.on_changed(BK_amp_s_func)
+BK_a_s.on_changed(BK_a_s_func)
 MN_ed_amp_s.on_changed(MN_ed_amp_s_func)
 MN_ed_a_s.on_changed(MN_ed_a_s_func)
 # Enable/disable the selected potential for the composed rotation curve
@@ -334,6 +370,9 @@ def check_on_clicked(label):
         update_rot_curve()
     elif label == 'NFW - Halo (GREEN)':
         NFW_plot.set_visible(not NFW_plot.get_visible())
+        update_rot_curve()
+    elif label == 'BURKERT - Halo ()':
+        BK_plot.set_visible(not BK_plot.get_visible())
         update_rot_curve()
     plt.draw()
     
@@ -370,11 +409,18 @@ if NFW_plot.get_visible() == True:
     print "El parámetro de concentracion del modelo NFW es: ",'%E' % NFW_p.conc()
 else:
     chk.append(False)
+if BK_plot.get_visible() == True:
+    chk.append(True)
+    print "La masa total del perfil de Burkert es M(",lista[-1],"kpc)=",'%E' % BK_p.mass(lista[-1]*units.kpc), "M_sun"
+    #print "La Masa virial del perfil de Burkert es: ", '%E' % BK_p.mvir(), "M_sun"
+    #print "El parámetro de concentracion del perfil de Burkert es: ",'%E' % BK_p.conc()
+else:
+    chk.append(False)
 
-compnts = ['BULGE','THIN DISK','THICK DISK','EXP DISK', 'DARK HALO']
-masses = [amp1, amp2, amp3, amp4, amp5]
-aa = [a1, a2, a3, h_r, a5]
-bb = [b1, b2, b3, 0, 0]
+compnts = ['BULGE','THIN DISK','THICK DISK','EXP DISK', 'DARK HALO', 'BURKERT HALO']
+masses = [amp1, amp2, amp3, amp4, amp5, amp6]
+aa = [a1, a2, a3, h_r, a5, a6]
+bb = [b1, b2, b3, 0, 0, 0]
 #chk = [True,True,False,False,False]
 
 
