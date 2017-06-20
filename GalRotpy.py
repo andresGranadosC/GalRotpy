@@ -64,7 +64,7 @@ amp4=input_params['mass'][3]
 a6=input_params['a (kpc)'][5]
 amp6=input_params['mass'][5]
 
-x_offset = 0 #0.35 # It defines a radial coordinate offset as user input
+x_offset = 0.35 # It defines a radial coordinate offset as user input
 r_0=1*units.kpc
 v_0=220*units.km/units.s
 
@@ -144,7 +144,7 @@ v_circ_comp_plot, = ax.plot(lista, v_circ_comp, c='k')
 
 # Checkbox for selecting the potentials to compose the rotation
 rax = plt.axes((0.05,0.8,0.2,0.15))
-check = CheckButtons(rax, ('MN Bulge (GRAY)', 'MN Thin Disk (RED)', 'MN Thick Disk (BLUE)', 'Exp. Disk (CYAN)', 'NFW - Halo (GREEN)', 'BURKERT - Halo ()'), (True, True, True, True, True, True))
+check = CheckButtons(rax, ('MN Bulge (GRAY)', 'MN Thin Disk (RED)', 'MN Thick Disk (BLUE)', 'Exp. Disk (CYAN)', 'NFW - Halo (GREEN)', 'BURKERT - Halo (ORANGE)'), (True, True, True, True, True, True))
 # Sliders for Bulge - gray
 MN_b_amp_ax = fig.add_axes((0.05,0.75,0.17,0.03))
 MN_b_amp_s = Slider(MN_b_amp_ax, r"M($M_\odot$)", input_params['mass'][0]/(10**input_params['threshold_mass'][0]), input_params['mass'][0]*(10**input_params['threshold_mass'][0]), valinit=input_params['mass'][0], color='gray', valfmt='%1.3E')
@@ -179,8 +179,8 @@ NFW_amp_s = Slider(NFW_amp_ax, r"M($M_\odot$)", input_params['mass'][4]/(10*inpu
 NFW_a_ax = fig.add_axes((0.05,0.24,0.17,0.03))
 NFW_a_s = Slider(NFW_a_ax, "a (kpc)", input_params['a (kpc)'][4]*(1-0.01*input_params['threshold_a'][4]), input_params['a (kpc)'][4]*(1+0.01*input_params['threshold_a'][4]), valinit=input_params['a (kpc)'][4], color='green')
 # Sliders for Burkert Halo - orange
-BK_amp_ax = fig.add_axes((0.05,0.15,0.17,0.03))
-BK_amp_s = Slider(BK_amp_ax, r"M($M_\odot$)", input_params['mass'][5]/(10*input_params['threshold_mass'][5]), input_params['mass'][5]*(10**input_params['threshold_mass'][5]), valinit=input_params['mass'][5], color='orange', valfmt='%1.3E')
+BK_amp_ax = fig.add_axes((0.07,0.15,0.17,0.03))
+BK_amp_s = Slider(BK_amp_ax, r"M($M_\odot/kpc^3$)", input_params['mass'][5]/(10*input_params['threshold_mass'][5]), input_params['mass'][5]*(10**input_params['threshold_mass'][5]), valinit=input_params['mass'][5], color='orange', valfmt='%1.3E')
 BK_a_ax = fig.add_axes((0.05,0.12,0.17,0.03))
 BK_a_s = Slider(BK_a_ax, "a (kpc)", input_params['a (kpc)'][5]*(1-0.01*input_params['threshold_a'][5]), input_params['a (kpc)'][5]*(1+0.01*input_params['threshold_a'][5]), valinit=input_params['a (kpc)'][5], color='orange')
 
@@ -371,7 +371,7 @@ def check_on_clicked(label):
     elif label == 'NFW - Halo (GREEN)':
         NFW_plot.set_visible(not NFW_plot.get_visible())
         update_rot_curve()
-    elif label == 'BURKERT - Halo ()':
+    elif label == 'BURKERT - Halo (ORANGE)':
         BK_plot.set_visible(not BK_plot.get_visible())
         update_rot_curve()
     plt.draw()
