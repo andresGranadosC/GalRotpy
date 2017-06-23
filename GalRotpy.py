@@ -64,7 +64,7 @@ amp4=input_params['mass'][3]
 a6=input_params['a (kpc)'][5]
 amp6=input_params['mass'][5]
 
-x_offset = 0.35 # It defines a radial coordinate offset as user input
+x_offset = 0.0      #0.35 # It defines a radial coordinate offset as user input
 r_0=1*units.kpc
 v_0=220*units.km/units.s
 
@@ -96,6 +96,8 @@ v_circ_comp = calcRotcurve([MN_Bulge_p,MN_Thin_Disk_p,MN_Thick_Disk_p, EX_Disk_p
 # Global variables for the plot
 fig = plt.figure()
 ax = fig.add_axes((0.35, 0.1, 0.6, 0.85))
+ax.yaxis.set_ticks_position('both')
+ax.tick_params(axis='y', which='both', labelleft='on', labelright='on')
 ax.set_xlim([0, r_data[-1]])
 # A plot for each rotation curve with the colors indicated below
 MN_b_plot, = ax.plot(lista, MN_Bulge, linestyle='--', c='gray')
@@ -112,7 +114,7 @@ ax.cla()
 
 #fig = plt.figure()
 #ax = fig.add_axes((0.35, 0.1, 0.6, 0.85))
-ax.set_title(name, fontsize=30)
+#ax.set_title(name, fontsize=30)
 ax.set_xlabel(r'$R$ (kpc)', fontsize=20)
 ax.set_ylabel(r'$v_c$ (km/s)', fontsize=20)
 ax.set_xlim([0, r_data[-1]])
@@ -152,37 +154,40 @@ MN_b_a_ax = fig.add_axes((0.05,0.72,0.17,0.03))
 MN_b_a_s = Slider(MN_b_a_ax, "a (kpc)", 0, 0.01*input_params['threshold_a'][0], valinit=0.0, color='gray')
 MN_b_b_ax = fig.add_axes((0.05,0.69,0.17,0.03))
 MN_b_b_s = Slider(MN_b_b_ax, "b (kpc)", input_params['b (kpc)'][0]*(1-0.01*input_params['threshold_b'][0]), input_params['b (kpc)'][0]*(1+0.01*input_params['threshold_b'][0]), valinit=input_params['b (kpc)'][0], color='gray')
+#MN_b_b_s = Slider(MN_b_b_ax, "b (kpc)", input_params['b (kpc)'][0]/(10**input_params['threshold_b'][0]), input_params['b (kpc)'][0]*(10**input_params['threshold_b'][0]), valinit=input_params['b (kpc)'][0], color='gray')
 # Sliders for Thin disk - red
 MN_td_amp_ax = fig.add_axes((0.05,0.63,0.17,0.03))
 MN_td_amp_s = Slider(MN_td_amp_ax, r"M($M_\odot$)", input_params['mass'][1]/(10**input_params['threshold_mass'][1]), input_params['mass'][1]*(10**input_params['threshold_mass'][1]), valinit=input_params['mass'][1], color='red', valfmt='%1.3E')
 MN_td_a_ax = fig.add_axes((0.05,0.6,0.17,0.03))
 MN_td_a_s = Slider(MN_td_a_ax, "a (kpc)", input_params['a (kpc)'][1]*(1-0.01*input_params['threshold_a'][1]), input_params['a (kpc)'][1]*(1+0.01*input_params['threshold_a'][1]), valinit=input_params['a (kpc)'][1], color='red')
 MN_td_b_ax = fig.add_axes((0.05,0.57,0.17,0.03))
-MN_td_b_s = Slider(MN_td_b_ax, "b (kpc)", input_params['b (kpc)'][1]*(1-0.01*input_params['threshold_b'][1]), input_params['b (kpc)'][1]*(1+0.01*input_params['threshold_b'][1]), valinit=input_params['b (kpc)'][1], color='red')
+#MN_td_b_s = Slider(MN_td_b_ax, "b (kpc)", input_params['b (kpc)'][1]*(1-0.01*input_params['threshold_b'][1]), input_params['b (kpc)'][1]*(1+0.01*input_params['threshold_b'][1]), valinit=input_params['b (kpc)'][1], color='red')
+MN_td_b_s = Slider(MN_td_b_ax, "b (kpc)", input_params['b (kpc)'][1]/(10**input_params['threshold_b'][1]), input_params['b (kpc)'][1]*(10**input_params['threshold_b'][1]), valinit=input_params['b (kpc)'][1], color='red')
 # Sliders for Thick disk - Blue
 MN_tkd_amp_ax = fig.add_axes((0.05,0.51,0.17,0.03))
 MN_tkd_amp_s = Slider(MN_tkd_amp_ax, r"M($M_\odot$)", input_params['mass'][2]/(10**input_params['threshold_mass'][2]), input_params['mass'][2]*(10**input_params['threshold_mass'][2]), valinit=input_params['mass'][2], color='blue', valfmt='%1.3E')
 MN_tkd_a_ax = fig.add_axes((0.05,0.48,0.17,0.03))
 MN_tkd_a_s = Slider(MN_tkd_a_ax, "a (kpc)", input_params['a (kpc)'][2]*(1-0.01*input_params['threshold_a'][2]), input_params['a (kpc)'][2]*(1+0.01*input_params['threshold_a'][2]), valinit=input_params['a (kpc)'][2], color='blue')
 MN_tkd_b_ax = fig.add_axes((0.05,0.45,0.17,0.03))
-MN_tkd_b_s = Slider(MN_tkd_b_ax, "b (kpc)", input_params['b (kpc)'][2]*(1-0.01*input_params['threshold_b'][2]), input_params['b (kpc)'][2]*(1+0.01*input_params['threshold_b'][2]), valinit=input_params['b (kpc)'][2], color='blue')
+#MN_tkd_b_s = Slider(MN_tkd_b_ax, "b (kpc)", input_params['b (kpc)'][2]*(1-0.01*input_params['threshold_b'][2]), input_params['b (kpc)'][2]*(1+0.01*input_params['threshold_b'][2]), valinit=input_params['b (kpc)'][2], color='blue')
+MN_tkd_b_s = Slider(MN_tkd_b_ax, "b (kpc)", input_params['b (kpc)'][2]/(10**input_params['threshold_b'][2]), input_params['b (kpc)'][2]*(10**input_params['threshold_b'][2]), valinit=input_params['b (kpc)'][2], color='blue')
 
 #MN_tkd_amp_ax.set_visible=FalseMN_tkd_b_s
 # Sliders for exponential disk - Cyan
-MN_ed_amp_ax = fig.add_axes((0.07,0.39,0.17,0.03))
+MN_ed_amp_ax = fig.add_axes((0.08,0.36,0.17,0.03))
 MN_ed_amp_s = Slider(MN_ed_amp_ax, r"M($M_\odot/pc^2$)", input_params['mass'][3]/(10**input_params['threshold_mass'][3]), input_params['mass'][3]*(10**input_params['threshold_mass'][3]), valinit=input_params['mass'][3], color='cyan', valfmt='%1.3E')
-MN_ed_a_ax = fig.add_axes((0.05,0.36,0.17,0.03))
-MN_ed_a_s = Slider(MN_ed_a_ax, "h_r (kpc)", input_params['a (kpc)'][3]*(1-0.01*input_params['threshold_a'][3]), input_params['a (kpc)'][3]*(1+0.01*input_params['threshold_a'][3]), valinit=input_params['a (kpc)'][3], color='cyan')
+MN_ed_a_ax = fig.add_axes((0.08,0.33,0.17,0.03))
+MN_ed_a_s = Slider(MN_ed_a_ax, "$h_r$ (kpc)", input_params['a (kpc)'][3]*(1-0.01*input_params['threshold_a'][3]), input_params['a (kpc)'][3]*(1+0.01*input_params['threshold_a'][3]), valinit=input_params['a (kpc)'][3], color='cyan')
 # Sliders for Halo - green
-NFW_amp_ax = fig.add_axes((0.05,0.27,0.17,0.03))
+NFW_amp_ax = fig.add_axes((0.08,0.24,0.17,0.03))
 NFW_amp_s = Slider(NFW_amp_ax, r"M($M_\odot$)", input_params['mass'][4]/(10*input_params['threshold_mass'][4]), input_params['mass'][4]*(10**input_params['threshold_mass'][4]), valinit=input_params['mass'][4], color='green', valfmt='%1.3E')
-NFW_a_ax = fig.add_axes((0.05,0.24,0.17,0.03))
+NFW_a_ax = fig.add_axes((0.08,0.21,0.17,0.03))
 NFW_a_s = Slider(NFW_a_ax, "a (kpc)", input_params['a (kpc)'][4]*(1-0.01*input_params['threshold_a'][4]), input_params['a (kpc)'][4]*(1+0.01*input_params['threshold_a'][4]), valinit=input_params['a (kpc)'][4], color='green')
 # Sliders for Burkert Halo - orange
-BK_amp_ax = fig.add_axes((0.07,0.15,0.17,0.03))
-BK_amp_s = Slider(BK_amp_ax, r"M($M_\odot/kpc^3$)", input_params['mass'][5]/(10*input_params['threshold_mass'][5]), input_params['mass'][5]*(10**input_params['threshold_mass'][5]), valinit=input_params['mass'][5], color='orange', valfmt='%1.3E')
-BK_a_ax = fig.add_axes((0.05,0.12,0.17,0.03))
-BK_a_s = Slider(BK_a_ax, "a (kpc)", input_params['a (kpc)'][5]*(1-0.01*input_params['threshold_a'][5]), input_params['a (kpc)'][5]*(1+0.01*input_params['threshold_a'][5]), valinit=input_params['a (kpc)'][5], color='orange')
+BK_amp_ax = fig.add_axes((0.08,0.12,0.17,0.03))
+BK_amp_s = Slider(BK_amp_ax, r"$\rho_c$($M_\odot/kpc^3$)", input_params['mass'][5]/(10*input_params['threshold_mass'][5]), input_params['mass'][5]*(10**input_params['threshold_mass'][5]), valinit=input_params['mass'][5], color='orange', valfmt='%1.3E')
+BK_a_ax = fig.add_axes((0.08,0.09,0.17,0.03))
+BK_a_s = Slider(BK_a_ax, "r_c (kpc)", input_params['a (kpc)'][5]*(1-0.01*input_params['threshold_a'][5]), input_params['a (kpc)'][5]*(1+0.01*input_params['threshold_a'][5]), valinit=input_params['a (kpc)'][5], color='orange')
 
 # Function for setting new parameters for each potential
 def MN_b_amp_s_func(val):
