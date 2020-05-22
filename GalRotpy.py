@@ -55,7 +55,39 @@ np.warnings.filterwarnings('ignore')
 
 tt=Table.Table.read('rot_curve.txt', format='ascii.tab') # Rotation curve
 
-input_params=Table.Table.read('input_params.txt', format='ascii.tab') # Initial parameters
+#input_params=Table.Table.read('input_params.txt', format='ascii.tab') # Initial parameters
+
+data_rows = [('BULGE', 110000000.0, 1.0, 0.0, 20, 0.495, 70),
+             ('THIN DISK', 3900000000.0, 1.0, 5.3, 90, 0.25, 1),
+             ('THICK DISK', 39000000000.0, 0.5, 2.6, 20, 0.8, 1),
+             ('EXP DISK', 500.0, 0.5, 5.3, 90, 0.0, 0),
+             ('DARK HALO', 140000000000.0, 1.0, 13.0, 90, 0.0, 0),
+             ('BURKERT HALO', 8000000.0, 1.0, 20.0, 90, 0.0, 0)]
+input_params = Table.Table(rows=data_rows, names=('component', 'mass', 'threshold_mass', 'a (kpc)', 'threshold_a', 'b (kpc)', 'threshold_b'))
+
+def input_component(component, guess_mass, guess_a, guess_b):
+    
+    component_mass, component_scale_a, component_scale_b = guess_mass, guess_a, guess_b
+    
+    print('Set the guess parameters for', component)
+    try:
+        component_mass = float(input('Mass (in M_sun):'))
+    except:
+        print('No valid Mass for', component, '. It will be taken the default mass:', component_mass, 'M_sun')
+    
+    
+    try:
+        component_scale_a = float(input('Radial Scale Length (in kpc):'))
+    except:
+        print('No valid Radial Scale Length for', component, '. It will be taken the default Radial Scale Lenght:', component_scale_a, 'kpc')
+
+    if component not in ['EXP DISK', 'DARK HALO', 'BURKERT HALO' ]:
+        try:
+            component_scale_b = float(input('Vertical Scale Length (in kpc):'))
+        except:
+            print('No valid Vertical Scale Length for', component, '. It will be taken the default Vertical Scale Lenght:', component_scale_b, 'kpc')
+    
+    return component_mass, component_scale_a, component_scale_b
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -76,32 +108,30 @@ for i in range(len(r_data)):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initial parameters:
 
-# Bulge potential 
-a1=input_params['a (kpc)'][0]
-b1=input_params['b (kpc)'][0]
-amp1=input_params['mass'][0]
+c_bulge, amp1, delta_mass_bulge, a1, delta_radial_bulge, b1, delta_vertical_bulge = input_params[0]
+amp1, a1, b1 = input_component(c_bulge, amp1, a1, b1)
+#print(mass, radial, vertical)
 
-# Thin disk potential
-a2=input_params['a (kpc)'][1]
-b2=input_params['b (kpc)'][1]
-amp2=input_params['mass'][1]
+c_tn, amp2, delta_mass_tn, a2, delta_radial_tn, b2, delta_vertical_tn = input_params[1]
+amp2, a2, b2 = input_component(c_tn, amp2, a2, b2)
+#print(mass, radial, vertical)
 
-# Thick disk potential
-a3=input_params['a (kpc)'][2]
-b3=input_params['b (kpc)'][2]
-amp3=input_params['mass'][2]
+c_tk, amp3, delta_mass_tk, a3, delta_radial_tk, b3, delta_vertical_tk = input_params[2]
+amp3, a3, b3 = input_component(c_tk, amp3, a3, b3)
+#print(mass, radial, vertical)
 
-# Dark Halo potential
-a5=input_params['a (kpc)'][4]
-amp5=input_params['mass'][4]
+c_ex, amp4, delta_mass_ex, h_r, delta_radial_ex, vertical_ex, delta_vertical_ex = input_params[3]
+amp4, h_r, vertical_ex = input_component(c_ex, amp4, h_r, vertical_ex)
+#print(mass, radial, vertical)
 
-# Eential disk potential
-h_r=input_params['a (kpc)'][3]
-amp4=input_params['mass'][3]
+c_dh, amp5, delta_mass_dh, a5, delta_radial_dh, b5, delta_vertical_dh = input_params[4]
+amp5, a5, b5 = input_component(c_dh, amp5, a5, b5)
+#print(mass, radial, vertical)
 
-# Burkert potential
-a6=input_params['a (kpc)'][5]
-amp6=input_params['mass'][5]
+c_bh, amp6, delta_mass_bh, a6, delta_radial_bh, b6, delta_vertical_bh = input_params[5]
+amp6, a6, b6 = input_component(c_bh, amp6, a6, b6)
+#print(mass, radial, vertical)
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Here we calculate de rotation curve for each of the potentials used
@@ -182,45 +212,45 @@ for r in check.rectangles: # Checkbox options-colors
 
 # Bulge - gray
 MN_b_amp_ax = fig.add_axes((0.09,0.75,0.17,0.03))
-MN_b_amp_s = Slider(MN_b_amp_ax, r"$M$($M_\odot$)", input_params['mass'][0]/(10**input_params['threshold_mass'][0]), input_params['mass'][0]*(10**input_params['threshold_mass'][0]), valinit=input_params['mass'][0], color='gray', valfmt='%1.3E')
+MN_b_amp_s = Slider(MN_b_amp_ax, r"$M$($M_\odot$)", amp1/(10**delta_mass_bulge), amp1*(10**delta_mass_bulge), valinit=amp1, color='gray', valfmt='%1.3E')
 MN_b_a_ax = fig.add_axes((0.09,0.72,0.17,0.03))
-MN_b_a_s = Slider(MN_b_a_ax, "$a$ ($kpc$)", 0, 0.1*input_params['threshold_a'][0], valinit=input_params['a (kpc)'][0], color='gray')
+MN_b_a_s = Slider(MN_b_a_ax, "$a$ ($kpc$)", 0, 0.1*delta_radial_bulge, valinit=a1, color='gray')
 MN_b_b_ax = fig.add_axes((0.09,0.69,0.17,0.03))
-MN_b_b_s = Slider(MN_b_b_ax, "$b$ ($kpc$)", input_params['b (kpc)'][0]*(1-0.01*input_params['threshold_b'][0]), input_params['b (kpc)'][0]*(1+0.01*input_params['threshold_b'][0]), valinit=input_params['b (kpc)'][0], color='gray')
+MN_b_b_s = Slider(MN_b_b_ax, "$b$ ($kpc$)", b1*(1-0.01*delta_vertical_bulge), b1*(1+0.01*delta_vertical_bulge), valinit=b1, color='gray')
 
 # Thin disk - purple
 MN_td_amp_ax = fig.add_axes((0.09,0.63,0.17,0.03))
-MN_td_amp_s = Slider(MN_td_amp_ax, r"$M$($M_\odot$)", input_params['mass'][1]/(10**input_params['threshold_mass'][1]), input_params['mass'][1]*(10**input_params['threshold_mass'][1]), valinit=input_params['mass'][1], color='purple', valfmt='%1.3E')
+MN_td_amp_s = Slider(MN_td_amp_ax, r"$M$($M_\odot$)", amp2/(10**delta_mass_tn), amp2*(10**delta_mass_tn), valinit=amp2, color='purple', valfmt='%1.3E')
 MN_td_a_ax = fig.add_axes((0.09,0.60,0.17,0.03))
-MN_td_a_s = Slider(MN_td_a_ax, "$a$ ($kpc$)", input_params['a (kpc)'][1]*(1-0.01*input_params['threshold_a'][1]), input_params['a (kpc)'][1]*(1+0.01*input_params['threshold_a'][1]), valinit=input_params['a (kpc)'][1], color='purple')
+MN_td_a_s = Slider(MN_td_a_ax, "$a$ ($kpc$)", a2*(1-0.01*delta_radial_tn), a2*(1+0.01*delta_radial_tn), valinit=a2, color='purple')
 MN_td_b_ax = fig.add_axes((0.09,0.57,0.17,0.03))
-MN_td_b_s = Slider(MN_td_b_ax, "$b$ ($kpc$)", input_params['b (kpc)'][1]/(10**input_params['threshold_b'][1]), input_params['b (kpc)'][1]*(10**input_params['threshold_b'][1]), valinit=input_params['b (kpc)'][1], color='purple')
+MN_td_b_s = Slider(MN_td_b_ax, "$b$ ($kpc$)", b2/(10**delta_vertical_tn), b2*(10**delta_vertical_tn), valinit=b2, color='purple')
 
 # Thick disk - Blue
 MN_tkd_amp_ax = fig.add_axes((0.09,0.51,0.17,0.03))
-MN_tkd_amp_s = Slider(MN_tkd_amp_ax, r"$M$($M_\odot$)", input_params['mass'][2]/(10**input_params['threshold_mass'][2]), input_params['mass'][2]*(10**input_params['threshold_mass'][2]), valinit=input_params['mass'][2], color='blue', valfmt='%1.3E')
+MN_tkd_amp_s = Slider(MN_tkd_amp_ax, r"$M$($M_\odot$)", amp3/(10**delta_mass_tk), amp3*(10**delta_mass_tk), valinit=amp3, color='blue', valfmt='%1.3E')
 MN_tkd_a_ax = fig.add_axes((0.09,0.48,0.17,0.03))
-MN_tkd_a_s = Slider(MN_tkd_a_ax, "$a$ ($kpc$)", input_params['a (kpc)'][2]*(1-0.01*input_params['threshold_a'][2]), input_params['a (kpc)'][2]*(1+0.01*input_params['threshold_a'][2]), valinit=input_params['a (kpc)'][2], color='blue')
+MN_tkd_a_s = Slider(MN_tkd_a_ax, "$a$ ($kpc$)", a3*(1-0.01*delta_radial_tk), a3*(1+0.01*delta_radial_tk), valinit=a3, color='blue')
 MN_tkd_b_ax = fig.add_axes((0.09,0.45,0.17,0.03))
-MN_tkd_b_s = Slider(MN_tkd_b_ax, "$b$ ($kpc$)", input_params['b (kpc)'][2]/(10**input_params['threshold_b'][2]), input_params['b (kpc)'][2]*(10**input_params['threshold_b'][2]), valinit=input_params['b (kpc)'][2], color='blue')
+MN_tkd_b_s = Slider(MN_tkd_b_ax, "$b$ ($kpc$)", b3/(10**delta_vertical_tk), b3*(10**delta_vertical_tk), valinit=b3, color='blue')
 
 # Exponential disk - Cyan
 MN_ed_amp_ax = fig.add_axes((0.09,0.39,0.17,0.03))
-MN_ed_amp_s = Slider(MN_ed_amp_ax, r"$\Sigma_0$($M_\odot/pc^2$)", input_params['mass'][3]/(10**input_params['threshold_mass'][3]), input_params['mass'][3]*(10**input_params['threshold_mass'][3]), valinit=input_params['mass'][3], color='cyan', valfmt='%1.3E')
+MN_ed_amp_s = Slider(MN_ed_amp_ax, r"$\Sigma_0$($M_\odot/pc^2$)", amp4/(10**delta_mass_ex), amp4*(10**delta_mass_ex), valinit=amp4, color='cyan', valfmt='%1.3E')
 MN_ed_a_ax = fig.add_axes((0.09,0.36,0.17,0.03))
-MN_ed_a_s = Slider(MN_ed_a_ax, "$h_r$ ($kpc$)", input_params['a (kpc)'][3]*(1-0.01*input_params['threshold_a'][3]), input_params['a (kpc)'][3]*(1+0.01*input_params['threshold_a'][3]), valinit=input_params['a (kpc)'][3], color='cyan')
+MN_ed_a_s = Slider(MN_ed_a_ax, "$h_r$ ($kpc$)", h_r*(1-0.01*delta_radial_ex), h_r*(1+0.01*delta_radial_ex), valinit=h_r, color='cyan')
 
 # NFW Halo - green
 NFW_amp_ax = fig.add_axes((0.09,0.30,0.17,0.03))
-NFW_amp_s = Slider(NFW_amp_ax, r"$M_0$($M_\odot$)", input_params['mass'][4]/(10*input_params['threshold_mass'][4]), input_params['mass'][4]*(10**input_params['threshold_mass'][4]), valinit=input_params['mass'][4], color='green', valfmt='%1.3E')
+NFW_amp_s = Slider(NFW_amp_ax, r"$M_0$($M_\odot$)", amp5/(10*delta_mass_dh), amp5*(10**delta_mass_dh), valinit=amp5, color='green', valfmt='%1.3E')
 NFW_a_ax = fig.add_axes((0.09,0.27,0.17,0.03))
-NFW_a_s = Slider(NFW_a_ax, "$a$ ($kpc$)", input_params['a (kpc)'][4]*(1-0.01*input_params['threshold_a'][4]), input_params['a (kpc)'][4]*(1+0.01*input_params['threshold_a'][4]), valinit=input_params['a (kpc)'][4], color='green')
+NFW_a_s = Slider(NFW_a_ax, "$a$ ($kpc$)", a5*(1-0.01*delta_radial_dh), a5*(1+0.01*delta_radial_dh), valinit=a5, color='green')
 
 # Burkert Halo - orange
 BK_amp_ax = fig.add_axes((0.09,0.21,0.17,0.03))
-BK_amp_s = Slider(BK_amp_ax, r"$\rho_0$($M_\odot/kpc^3$)", input_params['mass'][5]/(10*input_params['threshold_mass'][5]), input_params['mass'][5]*(10**input_params['threshold_mass'][5]), valinit=input_params['mass'][5], color='orange', valfmt='%1.3E')
+BK_amp_s = Slider(BK_amp_ax, r"$\rho_0$($M_\odot/kpc^3$)", amp6/(10*delta_mass_bh), amp6*(10**delta_mass_bh), valinit=amp6, color='orange', valfmt='%1.3E')
 BK_a_ax = fig.add_axes((0.09,0.18,0.17,0.03))
-BK_a_s = Slider(BK_a_ax, "$a$ ($kpc$)", input_params['a (kpc)'][5]*(1-0.01*input_params['threshold_a'][5]), input_params['a (kpc)'][5]*(1+0.01*input_params['threshold_a'][5]), valinit=input_params['a (kpc)'][5], color='orange')
+BK_a_s = Slider(BK_a_ax, "$a$ ($kpc$)", a6*(1-0.01*delta_radial_bh), a6*(1+0.01*delta_radial_bh), valinit=a6, color='orange')
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Here we define the function for setting new parameters for each potential
