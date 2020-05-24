@@ -1,7 +1,0 @@
-component	mass	threshold_mass	a (kpc)	threshold_a	b (kpc)	threshold_b
-BULGE	1.1E+08	1	0	20	0.495	70
-THIN DISK	3.9E+09	1	5.3	90	0.25	1
-THICK DISK	3.9E+10	0.5	2.6	20	0.8	1
-EXP DISK	5.0E+02	0.5	5.3	90	0	0
-DARK HALO	1.4E+11	1	13	90	0	0
-BURKERT HALO	8.0E+06	1	20	90	0	0

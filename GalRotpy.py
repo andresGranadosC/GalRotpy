@@ -60,8 +60,6 @@ np.warnings.filterwarnings('ignore')
 
 tt=Table.Table.read('rot_curve.txt', format='ascii.tab') # Rotation curve
 
-#input_params=Table.Table.read('input_params.txt', format='ascii.tab') # Initial parameters
-
 data_rows = [('BULGE', 110000000.0, 1.0, 0.0, 20, 0.495, 70),
              ('THIN DISK', 3900000000.0, 1.0, 5.3, 90, 0.25, 1),
              ('THICK DISK', 39000000000.0, 0.5, 2.6, 20, 0.8, 1),
@@ -794,13 +792,23 @@ print ("Dimension: ", ndim, "\n")
 # Cosmological overdensity
 
 if chk[4]==True or chk[5]==True:
-    Delta_c = float(input("Enter the cosmological overdensity you want to use:\n"))
+    try:
+        Delta_c = float(input("Enter the cosmological overdensity you want to use (default = 200):\n"))
+    except:
+        Delta_c = 200
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Nwalkers and Steps
 
-nwalkers = int(input("\nEnter the number of walkers you want to use:\n"))
-steps = int(input("\nEnter the number of steps you want the walkers to take:\n"))
+try:
+    nwalkers = int(input("\nEnter the number of walkers you want to use (default = 20):\n"))
+except:
+    nwalkers = 20
+
+try:
+    steps = int(input("\nEnter the number of steps you want the walkers to take (default = 100):\n"))
+except:
+    steps = 100
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 # Rotational Curve Model
@@ -812,7 +820,11 @@ sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(r_data, v_c_data, 
 # perform MCMC
 
 print ("\n#####################################################################\n")
-Round = int(input("Enter the number of times you want GalRotpy to run:\n"))
+try:
+    Round = int(input("Enter the number of times you want GalRotpy to run (default = 1):\n"))
+except:
+    Round = 1
+
 if Round <=0:
     print ("\nStart over...")
     exit()
@@ -932,8 +944,10 @@ plt.show()
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Nwalkers and Steps
 
-burn_in = int(input("Enter the number of steps you want to burn-in:\n"))
-
+try:
+    burn_in = int(input("Enter the number of steps you want to burn-in (default = 1):\n"))
+except:
+    burn_in = 1
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Here we plot the region of confidence
 
