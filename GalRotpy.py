@@ -58,7 +58,17 @@ np.warnings.filterwarnings('ignore')
 
 # Here we load the needed data
 
-tt=Table.Table.read('rot_curve.txt', format='ascii.tab') # Rotation curve
+try:
+    if len(sys.argv) == 1:
+        raise Exception('Error: Rotation curve file not found')
+    else:
+        tt=Table.Table.read(sys.argv[1], format='ascii.tab') # Rotation curve
+except Exception as error:
+    print(error)
+    sys.exit()
+except:
+    print("Error: Rotation curve file ", sys.argv[1]," not readable or corrupt. Please read the documentation for rotation file specifications.")
+    sys.exit()
 
 data_rows = [('BULGE', 110000000.0, 1.0, 0.0, 20, 0.495, 70),
              ('THIN DISK', 3900000000.0, 1.0, 5.3, 90, 0.25, 1),
@@ -177,14 +187,14 @@ c_bh, amp6, delta_mass_bh, a6, delta_radial_bh, b6, delta_vertical_bh = input_pa
 valid_argv = True
 print("sys.argv------", sys.argv)
 visibility = [True, True, True, True, True, True]
-if (len(sys.argv) > 1):
+if (len(sys.argv) > 2):
     for (i, arg) in enumerate(ALLOWED_POTENTIALS):
         if arg in sys.argv:
             visibility[i] = True
         else:
             visibility[i] = False
 
-    for i in sys.argv[1:]:
+    for i in sys.argv[2:]:
         if i not in ALLOWED_ARGS:
             valid_argv = valid_argv and False
     print("valid_argv-------", valid_argv)
@@ -230,7 +240,6 @@ else:
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Here we calculate de rotation curve for each of the potentials used
-
 lista=np.linspace(0.001, 1.02*np.max(r_data), 10*len(r_data)) # radial coordinate for the rotation curve calculation
 
 # Potentials definition using physical units (amplitude in Solar masses, scales in kpc and surface density in Solar masses / pc^2 )
@@ -339,6 +348,7 @@ def update_rot_curve():
         composite_pot_array.append(BK_p)
     CV_galaxy = ax.errorbar(r_data - x_offset, v_c_data, v_c_err_data,  c='k', fmt='', ls='none')
     CV_galaxy_dot = ax.scatter(r_data - x_offset, v_c_data, c='k', alpha=0.4)
+    print("lista-------", lista)
     v_circ_comp = calcRotcurve(composite_pot_array, lista, phi=None)*220
     v_circ_comp_plot, = ax.plot(lista, v_circ_comp, c='k')
 
