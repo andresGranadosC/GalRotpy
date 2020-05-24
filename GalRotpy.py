@@ -178,7 +178,14 @@ c_bh, amp6, delta_mass_bh, a6, delta_radial_bh, b6, delta_vertical_bh = input_pa
 
 valid_argv = True
 print("sys.argv------", sys.argv)
+visibility = [True, True, True, True, True, True]
 if (len(sys.argv) > 1):
+    for (i, arg) in enumerate(ALLOWED_POTENTIALS):
+        if arg in sys.argv:
+            visibility[i] = True
+        else:
+            visibility[i] = False
+
     for i in sys.argv[1:]:
         if i not in ALLOWED_ARGS:
             valid_argv = valid_argv and False
@@ -273,12 +280,7 @@ v_circ_comp_plot, = ax.plot(lista, v_circ_comp, c='k')
 
 # Checkbox for selecting the potentials to compose the rotation
 rax = plt.axes((0.07, 0.8, 0.21, 0.15))
-visibility = []
-for arg in ALLOWED_POTENTIALS:
-    if arg in sys.argv:
-        visibility.append(True)
-    else:
-        visibility.append(False)
+
 print("visibility:---------", visibility)
 check = CheckButtons(rax, ('MN Bulge (GRAY)', 'MN Thin Disc (PURPLE)', 'MN Thick Disc (BLUE)', 'Exp. Disc (CYAN)', 'NFW - Halo (GREEN)', 'Burkert - Halo (ORANGE)'), visibility)
 
@@ -305,6 +307,7 @@ def update_rot_curve():
     ax.set_ylim([0,np.max(v_c_data)*1.2])
 
     check_visibility = check.get_status()
+    print("check_visibility:_--------", check_visibility)
     MN_b_plot.set_visible(check_visibility[0])
     MN_td_plot.set_visible(check_visibility[1])
     MN_tkd_plot.set_visible(check_visibility[2])
