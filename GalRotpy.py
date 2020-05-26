@@ -2,7 +2,7 @@
 """
     GalRotpy.py - a Python-based tool for parametrizing galaxy potential by rotation curve
 
-    Copyright (c) 2016 Andr\'es Granados
+    Copyright (c) 2016 Andr\'es Granados and Daniel Torres
     All rights reserved.
 
     Permission is hereby granted, free of charge, to any person obtaining
@@ -14,7 +14,7 @@
     the following conditions:
 
     The above copyright notice and this permission notice shall be
-    included in all copies or substantial portions of the Software.
+    included in all copies or substantial portions of     the Software.
 
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
@@ -39,12 +39,14 @@ import corner
 import time
 import pandas as pd
 import multiprocessing as mp
-from scipy.optimize import fsolve
+from scipy.optimize import fsolve, minimize
+from multiprocessing import Pool
 import sys
 from scipy.optimize import curve_fit
 
 ALLOWED_ARGS = ["bulge", "disk", "halo"]
 ALLOWED_POTENTIALS = ["bulge", "disk", "thickDisk", "expDisk", "halo", "burkert"]
+
 
 np.warnings.filterwarnings('ignore')
 
@@ -103,7 +105,12 @@ def input_component(component, guess_mass, guess_a, guess_b):
     return component_mass, component_scale_a, component_scale_b
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+# Chi^2
+def chi2(curves):
+    rc = calcRotcurve(curves, r_data, phi=None)*220
+    x2 = np.sum(((v_c_data-rc)/v_c_err_data)**2)
+    return x2
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 x_offset = 0.0  # It defines a radial coordinate offset as user input
 r_0=1*units.kpc # units 
 v_0=220*units.km/units.s # units 
@@ -112,7 +119,7 @@ v_0=220*units.km/units.s # units
 r_data=tt['r']-x_offset # The txt file must contain the radial coordinate values in kpc
 v_c_data=tt['vel'] # velocity in km/s
 v_c_err_data = tt['e_vel'] # and velocity error in km/s
-
+N_data = len(r_data)
 # This loop is needed since galpy fails when r=0 or very close to 0
 for i in range(len(r_data)):
     if r_data[i]<1e-3:
@@ -173,6 +180,7 @@ def ThinDisk_NFW_potentials( r, delta_r, tn_amp, tn_a, tn_b, dark_halo_amp, dark
 
     v_circ_comp = calcRotcurve([ MN_Thin_Disk_p, NFW_p], r-delta_r , phi=None)*220
     return v_circ_comp
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initial parameters:
@@ -240,6 +248,7 @@ else:
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Here we calculate de rotation curve for each of the potentials used
+
 lista=np.linspace(0.001, 1.02*np.max(r_data), 10*len(r_data)) # radial coordinate for the rotation curve calculation
 
 # Potentials definition using physical units (amplitude in Solar masses, scales in kpc and surface density in Solar masses / pc^2 )
@@ -283,7 +292,17 @@ NFW_plot, = ax.plot(lista, NFW, linestyle='--', c='green')
 BK_plot, = ax.plot(lista, BK, linestyle='--', c='orange')
 
 # Composed rotation curve
+
 v_circ_comp_plot, = ax.plot(lista, v_circ_comp, c='k')
+
+
+#HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+#HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+
+# PART 2: Interactive(Slides) code
+
+#HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+#HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 
 # Checkbox for selecting the potentials to compose the rotation
 rax = plt.axes((0.07, 0.8, 0.21, 0.15))
@@ -322,33 +341,44 @@ def update_rot_curve():
     NFW_plot.set_visible(check_visibility[4])
     BK_plot.set_visible(check_visibility[5])
 
+    N = []
     if MN_b_plot.get_visible() == True:
+        if a1 ==0.: N.append(2)
+        else:       N.append(3)
         MN_Bulge = calcRotcurve(MN_Bulge_p, lista, phi=None)*220
         MN_b_plot, = ax.plot(lista, MN_Bulge, linestyle='--', c='gray')
         composite_pot_array.append(MN_Bulge_p)
     if MN_td_plot.get_visible() == True:
+        N.append(3)
         MN_Thin_Disk = calcRotcurve(MN_Thin_Disk_p, lista, phi=None)*220
         MN_td_plot, = ax.plot(lista, MN_Thin_Disk, linestyle='--', c='purple')
         composite_pot_array.append(MN_Thin_Disk_p)
     if MN_tkd_plot.get_visible() == True:
+        N.append(3)
         MN_Thick_Disk = calcRotcurve(MN_Thick_Disk_p, lista, phi=None)*220
         MN_tkd_plot, = ax.plot(lista, MN_Thick_Disk, linestyle='--', c='blue')
         composite_pot_array.append(MN_Thick_Disk_p)
     if NFW_plot.get_visible() == True:
+        N.append(2)
         NFW = calcRotcurve(NFW_p, lista, phi=None)*220
         NFW_plot, = ax.plot(lista, NFW, linestyle='--', c='green')
         composite_pot_array.append(NFW_p)
     if EX_d_plot.get_visible() == True:
+        N.append(2)
         EX_Disk = calcRotcurve(EX_Disk_p, lista, phi=None)*220
         EX_d_plot, = ax.plot(lista, EX_Disk, linestyle='--', c='cyan')
         composite_pot_array.append(EX_Disk_p)
     if BK_plot.get_visible() == True:
+        N.append(2)
         BK = calcRotcurve(BK_p, lista, phi=None)*220
         BK_plot, = ax.plot(lista, BK, linestyle='--', c='orange')
         composite_pot_array.append(BK_p)
+    DIM = np.sum(N)
+    CHI2 = chi2(composite_pot_array)
+    props = dict(boxstyle='round', facecolor='white')
+    ax.text(0.02, 0.97, r"$\bar\chi^2={:.2f}$".format(CHI2/(N_data - DIM)), transform=ax.transAxes, fontsize=15, verticalalignment='top', bbox=props)
     CV_galaxy = ax.errorbar(r_data - x_offset, v_c_data, v_c_err_data,  c='k', fmt='', ls='none')
     CV_galaxy_dot = ax.scatter(r_data - x_offset, v_c_data, c='k', alpha=0.4)
-    print("lista-------", lista)
     v_circ_comp = calcRotcurve(composite_pot_array, lista, phi=None)*220
     v_circ_comp_plot, = ax.plot(lista, v_circ_comp, c='k')
 
@@ -365,8 +395,6 @@ update_rot_curve()
 
 #HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 #HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
-
-
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Here we define the sliders for each potential
@@ -588,7 +616,12 @@ def check_on_clicked(label):
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Plotting all the curves
-
+CHI2 = chi2([MN_Bulge_p,MN_Thin_Disk_p,MN_Thick_Disk_p, EX_Disk_p, NFW_p, BK_p])
+if a1 == 0.: N = 14
+if a1 != 0.: N = 15
+props = dict(boxstyle='round', facecolor='white')
+ax.text(0.02, 0.97, r"$\bar\chi^2={:.2f}$".format(CHI2/(N_data - N)), transform=ax.transAxes, fontsize=15, verticalalignment='top', bbox=props)
+ax.tick_params(axis='both', which='both', labelsize=15)
 ax.set_xlabel(r'$R(kpc)$', fontsize=20)
 ax.set_ylabel(r'$v_c(km/s)$', fontsize=20)
 ax.tick_params(axis='both', which='both', labelsize=15)
@@ -673,7 +706,7 @@ def model(parameters, R):
     
     for i in range(len(para_labels)):
         para[para_labels[i]] = parameters[i]
-            
+             
     r_0=1*units.kpc
     v_0=220*units.km/units.s
 
@@ -697,7 +730,7 @@ def model(parameters, R):
     if chk[2]==True:
         amp3=para["amp3"]; a3=para["a3"]; b3=para["b3"]
         MN_Thick_Disk_p= MiyamotoNagaiPotential(amp=amp3*units.Msun,a=a3*units.kpc,b=b3*units.kpc,normalize=False,ro=r_0, vo=v_0)
-        check_pot.append(MN_Thick_Disk_p)   
+        check_pot.append(MN_Thick_Disk_p)    
         
     if chk[3]==True:
         amp4=para["amp4"]; h_r=para["h_r"]
@@ -722,33 +755,25 @@ def model(parameters, R):
 
 #ln Prior
 def lnprior(parameters):
-    
-    booL = []
-    
-    for i in parameters:
-        if i>0.:
-            booL.append(True)
-        else:
-            booL.append(False)
-            
-    if False in booL:
-        return -np.inf      
+
+    if np.any(parameters < 0.) == True:
+        return -np.inf        
     else:
         return 0.0
         
-#ln Likehood    
-def lnlike(parameters, x, y, yerr):
-    Model = model(parameters, x)
-    return -0.5*(np.sum( ((y-Model)/yerr)**2))
+#ln Likehood  
+def lnlike(parameters):
+    Model = model(parameters, r_data)
+    return -0.5*(np.sum( ((v_c_data-Model)/v_c_err_data)**2))
 
 #ln Posterior
-def lnprob(parameters, x, y, yerr):
+def lnprob(parameters):
     lp = lnprior(parameters)
-    Model = model(parameters, x)
+    Model = model(parameters, r_data)
     if not np.isfinite(lp) or (True in np.isnan(Model)):
         return -np.inf
     else:
-        return lp + lnlike(parameters, x, y, yerr) 
+        return lp + lnlike(parameters) 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
@@ -762,41 +787,52 @@ para_in = []
 
 if chk[0]==True:
     if aa[0]==0.:
-        para_labels.append("b1");    para_in.append(bb[0]);      labels.append(r"$b_B$");        labels_log.append(r"$\log(b_B)$")
-        para_labels.append("amp1");  para_in.append(masses[0]);  labels.append(r"$M_B$");        labels_log.append(r"$\log(M_B)$")
+        para_labels.append("b1");    para_in.append(bb[0]);         labels.append(r"$b_B$");         labels_log.append(r"$\log(b_B)$")
+        para_labels.append("amp1");  para_in.append(masses[0]);  labels.append(r"$M_B$");         labels_log.append(r"$\log(M_B)$")
     else: 
-        para_labels.append("a1");    para_in.append(aa[0]);      labels.append(r"$a_B$");        labels_log.append(r"$\log(a_b)$")  
-        para_labels.append("b1");    para_in.append(bb[0]);      labels.append(r"$b_B$");        labels_log.append(r"$\log(b_b)$")
-        para_labels.append("amp1");  para_in.append(masses[0]);  labels.append(r"$M_B$");        labels_log.append(r"$\log(M_b)$")
+        para_labels.append("a1");    para_in.append(aa[0]);         labels.append(r"$a_B$");         labels_log.append(r"$\log(a_b)$")    
+        para_labels.append("b1");    para_in.append(bb[0]);         labels.append(r"$b_B$");         labels_log.append(r"$\log(b_b)$")
+        para_labels.append("amp1");  para_in.append(masses[0]);  labels.append(r"$M_B$");         labels_log.append(r"$\log(M_b)$")
 
 if chk[1]==True:
     para_labels.append("a2");    para_in.append(aa[1]);      labels.append(r"$a_{TD}$");     labels_log.append(r"$\log(a_{TD})$")
-    para_labels.append("b2");    para_in.append(bb[1]);      labels.append(r"$b_{TD}$");     labels_log.append(r"$\log(b_{TD})$")
-    para_labels.append("amp2");  para_in.append(masses[1]);  labels.append(r"$M_{TD}$");     labels_log.append(r"$\log(M_{TD})$")
+    para_labels.append("b2");    para_in.append(bb[1]);        labels.append(r"$b_{TD}$");     labels_log.append(r"$\log(b_{TD})$")
+    para_labels.append("amp2");  para_in.append(masses[1]);     labels.append(r"$M_{TD}$");     labels_log.append(r"$\log(M_{TD})$")
 
 if chk[2]==True:
-    para_labels.append("a3");    para_in.append(aa[2]);      labels.append(r"$a_{TkD}$");    labels_log.append(r"$\log(a_{TkD})$")      
-    para_labels.append("b3");    para_in.append(bb[2]);      labels.append(r"$b_{TkD}$");    labels_log.append(r"$\log(b_{TkD})$")  
-    para_labels.append("amp3");  para_in.append(masses[2]);  labels.append(r"$M_{TkD}$");    labels_log.append(r"$\log(M_{TkD})$")  
+    para_labels.append("a3");    para_in.append(aa[2]);         labels.append(r"$a_{TkD}$");     labels_log.append(r"$\log(a_{TkD})$")        
+    para_labels.append("b3");    para_in.append(bb[2]);         labels.append(r"$b_{TkD}$");     labels_log.append(r"$\log(b_{TkD})$")    
+    para_labels.append("amp3");  para_in.append(masses[2]);  labels.append(r"$M_{TkD}$");     labels_log.append(r"$\log(M_{TkD})$")    
 
 if chk[3]==True:
-    para_labels.append("h_r");   para_in.append(aa[3]);      labels.append(r"$h_{r}$");      labels_log.append(r"$\log(h_{r})$")    
-    para_labels.append("amp4");  para_in.append(masses[3]);  labels.append(r"$\Sigma_{0}$"); labels_log.append(r"$\log(\Sigma_{0})$")   
+    para_labels.append("h_r");   para_in.append(aa[3]);         labels.append(r"$h_{r}$");         labels_log.append(r"$\log(h_{r})$")    
+    para_labels.append("amp4");  para_in.append(masses[3]);     labels.append(r"$\Sigma_{0}$"); labels_log.append(r"$\log(\Sigma_{0})$")    
     
 if chk[4]==True:
-    para_labels.append("a5");    para_in.append(aa[4]);      labels.append(r"$a_{NFW}$");    labels_log.append(r"$\log(a_{NFW})$")
-    para_labels.append("amp5");  para_in.append(masses[4]);  labels.append(r"$M_{0}$");  labels_log.append(r"$\log(M_{0})$")
+    para_labels.append("a5");    para_in.append(aa[4]);         labels.append(r"$a_{NFW}$");     labels_log.append(r"$\log(a_{NFW})$")
+    para_labels.append("amp5");  para_in.append(masses[4]);     labels.append(r"$M_{0}$");     labels_log.append(r"$\log(M_{0})$")
     
 if chk[5]==True:
-    para_labels.append("a6");    para_in.append(aa[5]);      labels.append(r"$a_{Bk}$");     labels_log.append(r"$\log(a_{Bk})$")
-    para_labels.append("amp6");  para_in.append(masses[5]);  labels.append(r"$\rho_{0}$");   labels_log.append(r"$\log(\rho_{0})$")
+    para_labels.append("a6");    para_in.append(aa[5]);         labels.append(r"$a_{Bk}$");     labels_log.append(r"$\log(a_{Bk})$")
+    para_labels.append("amp6");  para_in.append(masses[5]);     labels.append(r"$\rho_{0}$");     labels_log.append(r"$\log(\rho_{0})$")
        
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
 # Dimension
 
-start = np.array(para_in)
-ndim = len(start)
+def res(parameters):
+    if np.any(parameters <= 0) == True:
+        return np.inf
+    else:
+        rc = model(parameters, r_data)
+        x2 = np.sum(((v_c_data-rc)/v_c_err_data)**2)
+    return x2
+
+v_guess = np.array(para_in)
+ndim = len(v_guess)
+start = minimize(res, v_guess, ).x
 print ("Dimension: ", ndim, "\n")
+#print("v_guess =", v_guess)
+#print("min=", start)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
 # Cosmological overdensity
@@ -843,7 +879,13 @@ print ("\nRunning...\n")
 time0 = time.time()
 
 if Round == 1:
-    p0, lp, _  = sampler.run_mcmc(pos_in, steps)
+    #with Pool() as pool:
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
+    star= time.time()
+    sampler.run_mcmc(pos_in, steps, progress=True)
+    end = time.time()
+    multi_time = end - star
+    print("Multiprocessing took {0:.1f} seconds".format(multi_time))
     print ("It took ", (time.time()-time0)/60, "minutes\n")
 
 if Round >1:
@@ -903,7 +945,7 @@ class Index(object):
         ax.clear()
         #plt.subplots_adjust(bottom=0.2)    
         for i in range(nwalkers):
-            data_a = np.array(sampler.chain[:,:,self.ind].T)[:,i]   
+            data_a = np.array(sampler.chain[:,:,self.ind].T)[:,i]    
             ax.plot(chain_steps, data_a, '-', color='k', alpha=0.3)
             ax.plot(chain_steps, len(chain_steps)*[start[self.ind]], '-', color='r', lw=1)
         ax.set_xlim(0, len(chain_steps)-1)
@@ -923,7 +965,7 @@ class Index(object):
         ax.clear()
         #plt.subplots_adjust(bottom=0.2)    
         for i in range(nwalkers):
-            data_a = np.array(sampler.chain[:,:,self.ind].T)[:,i]   
+            data_a = np.array(sampler.chain[:,:,self.ind].T)[:,i]    
             ax.plot(chain_steps, data_a, '-', color='k', alpha=0.3)
             ax.plot(chain_steps, len(chain_steps)*[start[self.ind]], '-', color='r', lw=1)
         ax.set_xlim(0, len(chain_steps)-1)
@@ -1027,7 +1069,7 @@ table_units = []
 final_para_labels = []
 fit_para = []
 
-for i in range(ndim):   
+for i in range(ndim):    
     mcmc = np.percentile(samples[:, i], [50.-0.5*95, 50.-0.5*68, 50., 50.+0.5*68, 50.+0.5*95])
     para.append(mcmc[2])
     fit_para.append(mcmc[2]) 
@@ -1120,8 +1162,8 @@ for i in range(ndim):
 
 r=np.linspace(0.001, 1.02*np.amax(r_data),10000)
 curva = model(fit_para, r)
-Y_guess=model(start, r)
-    
+nchi2 = np.sum(((model(fit_para, r_data) - v_c_data)/v_c_err_data)**2)/(N_data - ndim)
+print("chi=", nchi2)
 np.warnings.filterwarnings('ignore')
 plt.figure(figsize=(6, 6))
 
@@ -1130,7 +1172,7 @@ best_para = {}
     
 for i in range(len(final_para_labels)):
     best_para[final_para_labels[i]] = para[i]
-            
+             
 if chk[0]==True:
     if aa[0]==0.:
         a1=0.
@@ -1212,17 +1254,17 @@ if chk[2]==True:
 
 if chk[3]==True:
     index.append(r"EXPONENTIAL DISK"); index.append(r"---"); index.append(r"---")
-    table_para.append(r"h_r");      table_units.append(r"kpc")
-    table_para.append(r"Sigma_0");  table_units.append(r"M_Sun/pc^2")
+    table_para.append(r"h_r");        table_units.append(r"kpc")
+    table_para.append(r"Sigma_0");    table_units.append(r"M_Sun/pc^2")
     table_para.append(r"M");    table_units.append(r"M_Sun")    
     
 if chk[4]==True:
     index.append(r"NFW HALO"); index.append(r"---"); index.append(r"---"); index.append(r"---"); index.append(r"---")
     table_para.append(r"a");    table_units.append(r"kpc")
-    table_para.append(r"M_0");  table_units.append(r"M_Sun")
+    table_para.append(r"M_0");    table_units.append(r"M_Sun")
     table_para.append(r"rho_0");    table_units.append(r"M_Sun/kpc^3")
     table_para.append(r"X");    table_units.append(r"---")
-    table_para.append(r"M_h");  table_units.append(r"M_Sun")
+    table_para.append(r"M_h");    table_units.append(r"M_Sun")
 
     
 if chk[5]==True:
@@ -1231,13 +1273,13 @@ if chk[5]==True:
     table_para.append(r"a");        table_units.append(r"kpc")
     table_para.append(r"rho_0");    table_units.append(r"M_Sun/kpc^3")
     table_para.append(r"X");    table_units.append(r"---")
-    table_para.append(r"M_h");  table_units.append(r"M_Sun")
+    table_para.append(r"M_h");    table_units.append(r"M_Sun")
 
     
 for i in range(len(para)):
     table_data.append([table_para[i], table_units[i], paran95[i], paran68[i], para[i], parap68[i], parap95[i]])
 
-column_name = [r"PARAMETER", r"UNITS", r"95%(-)", r"68%(-)", r"FIT", r"68%(+)", r"95%(+)"]  
+column_name = [r"PARAMETER", r"UNITS", r"95%(-)", r"68%(-)", r"FIT", r"68%(+)", r"95%(+)"]    
 table_p = pd.DataFrame(table_data, index=index, columns=column_name)
 table_p.to_csv("final_params.txt", sep='\t', encoding='utf-8')
 print (table_p)
