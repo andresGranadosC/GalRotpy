@@ -193,7 +193,6 @@ c_dh, amp5, delta_mass_dh, a5, delta_radial_dh, b5, delta_vertical_dh = input_pa
 c_bh, amp6, delta_mass_bh, a6, delta_radial_bh, b6, delta_vertical_bh = input_params[5]
 
 valid_argv = True
-print("sys.argv------", sys.argv)
 visibility = [True, True, True, True, True, True]
 if (len(sys.argv) > 2):
     for (i, arg) in enumerate(ALLOWED_POTENTIALS):
@@ -205,7 +204,6 @@ if (len(sys.argv) > 2):
     for i in sys.argv[2:]:
         if i not in ALLOWED_ARGS:
             valid_argv = valid_argv and False
-    print("valid_argv-------", valid_argv)
     if valid_argv:
         # Rotation curve fitting
         if ("bulge" in sys.argv) and ("halo" in sys.argv):
@@ -217,7 +215,6 @@ if (len(sys.argv) > 2):
                        p0=[x_offset, amp1, a1, b1, amp5, a5 ],
                        bounds=bounds )
             x_offset, amp1, a1, b1, amp5, a5 = popt
-            print("x_offset, amp1, a1, b1, amp5, a5-------", x_offset, amp1, a1, b1, amp5, a5)
         if ("bulge" in sys.argv) and ("disk" in sys.argv) and ("halo" in sys.argv):
             bounds = (( -10, amp1/(10**delta_mass_bulge), a1, b1*(1-0.01*delta_vertical_bulge), amp2/(10**delta_mass_tn), a2*(1-0.01*delta_radial_tn), b2/(10**delta_vertical_tn), amp5/(10*delta_mass_dh), a5*(1-0.01*delta_radial_dh)  ), 
                     (  10, amp1*(10**delta_mass_bulge), 0.1*delta_radial_bulge,  b1*(1+0.01*delta_vertical_bulge), amp2*(10**delta_mass_tn), a2*(1+0.01*delta_radial_tn), b2*(10**delta_vertical_tn), amp5*(10**delta_mass_dh), a5*(1+0.01*delta_radial_dh)  ) )
@@ -227,7 +224,6 @@ if (len(sys.argv) > 2):
                        p0=[x_offset, amp1, a1, b1, amp2, a2, b2, amp5, a5 ],
                        bounds=bounds )
             x_offset, amp1, a1, b1, amp2, a2, b2, amp5, a5 = popt
-            print("x_offset, amp1, a1, b1, amp2, a2, b2, amp5, a5---------", x_offset, amp1, a1, b1, amp2, a2, b2, amp5, a5)
         if ("disk" in sys.argv) and ("halo" in sys.argv):
             bounds = (( -10, amp2/(10**delta_mass_tn), a2*(1-0.01*delta_radial_tn), b2/(10**delta_vertical_tn), amp5/(10*delta_mass_dh), a5*(1-0.01*delta_radial_dh)  ), 
                   (  10, amp2*(10**delta_mass_tn), a2*(1+0.01*delta_radial_tn), b2*(10**delta_vertical_tn), amp5*(10**delta_mass_dh), a5*(1+0.01*delta_radial_dh)  ) )
@@ -237,7 +233,6 @@ if (len(sys.argv) > 2):
                        p0=[x_offset,  amp2, a2, b2, amp5, a5 ],
                        bounds=bounds )
             x_offset, amp2, a2, b2, amp5, a5 = popt
-            print("x_offset, amp2, a2, b2, amp5, a5---------", x_offset, amp2, a2, b2, amp5, a5)
 else:
     amp1, a1, b1 = input_component(c_bulge, amp1, a1, b1)
     amp2, a2, b2 = input_component(c_tn, amp2, a2, b2)
@@ -307,7 +302,6 @@ v_circ_comp_plot, = ax.plot(lista, v_circ_comp, c='k')
 # Checkbox for selecting the potentials to compose the rotation
 rax = plt.axes((0.07, 0.8, 0.21, 0.15))
 
-print("visibility:---------", visibility)
 check = CheckButtons(rax, ('MN Bulge (GRAY)', 'MN Thin Disc (PURPLE)', 'MN Thick Disc (BLUE)', 'Exp. Disc (CYAN)', 'NFW - Halo (GREEN)', 'Burkert - Halo (ORANGE)'), visibility)
 
 for r in check.rectangles: # Checkbox options-colors
@@ -329,11 +323,10 @@ def update_rot_curve():
     ax.set_ylabel(r'$v_c(km/s)$', fontsize=20)
     ax.tick_params(axis='both', which='both', labelsize=15)
     #ax.xaxis.set_major_locator(ticker.MultipleLocator(5))
-    ax.set_xlim([0, 1.02*r_data[-1]])
+    ax.set_xlim([0, np.max(lista)])
     ax.set_ylim([0,np.max(v_c_data)*1.2])
 
     check_visibility = check.get_status()
-    print("check_visibility:_--------", check_visibility)
     MN_b_plot.set_visible(check_visibility[0])
     MN_td_plot.set_visible(check_visibility[1])
     MN_tkd_plot.set_visible(check_visibility[2])
@@ -831,8 +824,6 @@ v_guess = np.array(para_in)
 ndim = len(v_guess)
 start = minimize(res, v_guess, ).x
 print ("Dimension: ", ndim, "\n")
-#print("v_guess =", v_guess)
-#print("min=", start)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
 # Cosmological overdensity
