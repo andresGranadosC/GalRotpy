@@ -1,3 +1,4 @@
+
 # GalRotpy
 
 A Python3-based tool for parametrizing the rotation curve and the galaxy potential of disk-like galaxies.
@@ -51,13 +52,13 @@ $ python3 GalRotpy rot_curve.txt [bulge halo] | [bulge disk halo] | [disk halo]
 |'DARK HALO'|140000000000.0|13.0|------|
 |'BURKERT HALO'|8000000.0|20.0|------|
 
-Finally there is shown the graphic composition of rotation curve. This is an interactive user aided tool for include or exclude the available components of the gravitational potential, then graphically recover the dynamic mass composition for the observed rotation curve.
+Finally there is shown the graphic composition of rotation curve. This is an interactive user aided tool for include or exclude the available components of the gravitational potential, then graphically recover the dynamic mass composition for the observed rotation curve and ccomputed ![](https://latex.codecogs.com/svg.latex?\chi%5E2) value:
 
 [![N|Solid](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/GalRotpy_example.png?raw=true)](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/GalRotpy_example.png)
 
-Once you have setted the initial parameters by the graphical reconstruction, press Start. GalRotpy will allow you to enter some parameters for MCMC fiting of all the dimensions setted previously and to find the dark halo mass.
+Once you have setted the initial parameters by the graphical reconstruction, press Start. GalRotpy will allow you to enter some parameters for MCMC fiting of all the dimensions setted previously and to find the dark halo mass. Then, there is required to set the number of times that GalRotpy must iterate (default=1).
 
-[![N|Solid](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/Terminal.png?raw=true)](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/Terminal.png)
+[![N|Solid](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/terminal3.png?raw=true)](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/Terminal.png)
 
 When GalRotpy finishes the MCMC processes, it will show up the results in independent plots interactively as is shown below.
 
@@ -65,19 +66,33 @@ When GalRotpy finishes the MCMC processes, it will show up the results in indepe
 
 [![N|Solid](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/Parameter_fit_2.png?raw=true)](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/Parameter_fit_2.png)
 
-Finally, GalRotpy print out all the results of parameter fitting.
+[![N|Solid](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/Parameter_fit_3.png?raw=true)](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/Parameter_fit_3.png)
 
-[![N|Solid](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/Final_fit.png?raw=true)](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/Final_fit.png)
+Finally, GalRotpy print out all the results of the MCMC parameter fitting including ![](https://latex.codecogs.com/svg.latex?\chi%5E2) value,
+ the estimations of dark matter halo considering the redshift and cosmological overdensity setted previously.
 
-and the output files are:
+[![N|Solid](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/terminal4.png?raw=true)](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/Final_fit.png)
+
+**Conf_Regions.pdf** and **GalRotpy_fit.pdf** files
+
+![Model View Controller](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/Conf_Regions.png?raw=true)
+
+![Model View Controller](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/GalRotpy_fit.png?raw=true)
+
+All the results are compiled in the following file called **final_params.txt** whose content is shown below:
+
+[![N|Solid](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/final_plot.png?raw=true)](https://github.com/andresGranadosC/GalRotpy/blob/master/docs/final_plot.png)
+
+GalRotpy produces the following output files:
 
  * **Conf_Regions.pdf**
  * **final_params.txt**
  * **GalRotpy_fit.pdf**
 
-GalRotpy offers a simple and powerful method to:
+## GalRotpy is a powerful method to:
+
  * checking the presence of an assumed mass type component in a observed rotation curve,
  * determine quantitatively the main mass contribution in a galaxy by means of the mass ratios of a given set of five potentials,
- * to bound the contribution of each mass component given its radial and height scales.
+ * to bound the contribution of each mass component given its gravitational potential parameters.
 
 The related pre-print reference: [GalRotpy: an educational tool to understand and parametrize the rotation curve and gravitational potential of disk-like galaxies](https://arxiv.org/abs/1705.01665)
