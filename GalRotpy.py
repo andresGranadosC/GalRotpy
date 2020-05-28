@@ -39,10 +39,10 @@ import corner
 import time
 import pandas as pd
 import multiprocessing as mp
-from scipy.optimize import fsolve, minimize
+from scipy.optimize import fsolve, minimize, curve_fit
 from multiprocessing import Pool
 import sys
-from scipy.optimize import curve_fit
+
 
 ALLOWED_ARGS = ["bulge", "disk", "halo"]
 ALLOWED_POTENTIALS = ["bulge", "disk", "thickDisk", "expDisk", "halo", "burkert"]
@@ -276,7 +276,7 @@ ax = fig.add_axes((0.41, 0.1, 0.55, 0.85))
 
 # Data
 CV_galaxy = ax.errorbar(r_data - x_offset, v_c_data, v_c_err_data,  c='k', fmt='', ls='none')
-CV_galaxy_dot = ax.scatter(r_data - x_offset, v_c_data, c='k', alpha=0.4)
+CV_galaxy_dot = ax.scatter(r_data - x_offset, v_c_data, c='k')
 
 # A plot for each rotation curve with the colors indicated below
 MN_b_plot, = ax.plot(lista, MN_Bulge, linestyle='--', c='gray')
@@ -322,7 +322,6 @@ def update_rot_curve():
     ax.set_xlabel(r'$R(kpc)$', fontsize=20)
     ax.set_ylabel(r'$v_c(km/s)$', fontsize=20)
     ax.tick_params(axis='both', which='both', labelsize=15)
-    #ax.xaxis.set_major_locator(ticker.MultipleLocator(5))
     ax.set_xlim([0, np.max(lista)])
     ax.set_ylim([0,np.max(v_c_data)*1.2])
 
@@ -371,7 +370,7 @@ def update_rot_curve():
     props = dict(boxstyle='round', facecolor='white')
     ax.text(0.02, 0.97, r"$\bar\chi^2={:.2f}$".format(CHI2/(N_data - DIM)), transform=ax.transAxes, fontsize=15, verticalalignment='top', bbox=props)
     CV_galaxy = ax.errorbar(r_data - x_offset, v_c_data, v_c_err_data,  c='k', fmt='', ls='none')
-    CV_galaxy_dot = ax.scatter(r_data - x_offset, v_c_data, c='k', alpha=0.4)
+    CV_galaxy_dot = ax.scatter(r_data - x_offset, v_c_data, c='k')
     v_circ_comp = calcRotcurve(composite_pot_array, lista, phi=None)*220
     v_circ_comp_plot, = ax.plot(lista, v_circ_comp, c='k')
 
@@ -585,6 +584,7 @@ button_reset.on_clicked(reset)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Enable/disable the selected potential for the composed rotation curve
+
 def check_on_clicked(label):
 
     if label == 'MN Bulge (GRAY)':
@@ -607,22 +607,46 @@ def check_on_clicked(label):
         update_rot_curve()
     plt.draw()
 
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Plotting all the curves
-CHI2 = chi2([MN_Bulge_p,MN_Thin_Disk_p,MN_Thick_Disk_p, EX_Disk_p, NFW_p, BK_p])
-if a1 == 0.: N = 14
-if a1 != 0.: N = 15
+# Reduced Chi^2
+
+comp = []
+N    = 0
+if visibility[0] == True:
+    comp.append(MN_Bulge_p)
+    if a1 == 0.: N += 2
+    if a1 != 0.: N += 3
+if visibility[1] == True: 
+    comp.append(MN_Thin_Disk_p)
+    N += 3
+if visibility[2] == True: 
+    comp.append(MN_Thick_Disk_p)
+    N += 3
+if visibility[3] == True: 
+    comp.append(EX_Disk_p)
+    N += 2
+if visibility[4] == True: 
+    comp.append(NFW_p)
+    N += 2
+if visibility[5] == True: 
+    comp.append(BK_p)
+    N += 2
+
+CHI2 = chi2(comp)
 props = dict(boxstyle='round', facecolor='white')
 ax.text(0.02, 0.97, r"$\bar\chi^2={:.2f}$".format(CHI2/(N_data - N)), transform=ax.transAxes, fontsize=15, verticalalignment='top', bbox=props)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Plotting all the curves
+
 ax.tick_params(axis='both', which='both', labelsize=15)
 ax.set_xlabel(r'$R(kpc)$', fontsize=20)
 ax.set_ylabel(r'$v_c(km/s)$', fontsize=20)
 ax.tick_params(axis='both', which='both', labelsize=15)
-#ax.xaxis.set_major_locator(ticker.MultipleLocator(5))
 ax.set_xlim([0, np.max(lista)])
 ax.set_ylim([0,np.max(v_c_data)*1.2])
 check.on_clicked(check_on_clicked)
-
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
@@ -635,7 +659,7 @@ resetax = fig.add_axes((0.20, 0.08, 0.08, 0.05))
 button_start = Button(resetax, 'Start', color=axcolor)
   
 def start(event):
-    plt.close(1)
+    plt.close('all')
 
 button_start.on_clicked(start)
 
@@ -823,27 +847,44 @@ def res(parameters):
 v_guess = np.array(para_in)
 ndim = len(v_guess)
 start = minimize(res, v_guess, ).x
-print ("Dimension: ", ndim, "\n")
+print ("Dimension: ", ndim)
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
+# Galaxy's redshift
+if chk[4]==True or chk[5]==True:
+    try:
+        z = float(input("\nEnter the galaxy's redshift (default = 0):"))
+    except:
+        z = 0.
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
+# Cosmology
+    #H_0      =  2.1972483582604943e-18 #1 / s
+    #G        =  4.517103050001136e-39 #kpc^3 / (s^2 sunMass)
+    rho_c0   =  127.5791469578729 #sunMass / kpc^3
+    Omega_m0 = 0.3
+    Omega_L  = 0.7
+    Omega_m  =(Omega_m0*(1.+ z)**3)/(Omega_m0*(1.+ z)**3 + Omega_L)
+    rho_c    = rho_c0*(Omega_m0*(1.+ z)**3 + Omega_L)
+    Delta_c_aux = 18.*np.pi**2 + 82.*(Omega_m - 1.) - 39.*(Omega_m - 1.)**2
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
 # Cosmological overdensity
 
-if chk[4]==True or chk[5]==True:
     try:
-        Delta_c = float(input("Enter the cosmological overdensity you want to use (default = 200):\n"))
+        Delta_c = float(input("\nEnter the cosmological overdensity you want to use (default = {:.1f}): ".format(Delta_c_aux)))
     except:
-        Delta_c = 200
+        Delta_c = Delta_c_aux
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Nwalkers and Steps
 
 try:
-    nwalkers = int(input("\nEnter the number of walkers you want to use (default = 20):\n"))
+    nwalkers = int(input("\nEnter the number of walkers you want to use (default = {:.0f}): ".format(2*ndim)))
 except:
-    nwalkers = 20
+    nwalkers = 2*ndim
 
 try:
-    steps = int(input("\nEnter the number of steps you want the walkers to take (default = 100):\n"))
+    steps = int(input("\nEnter the number of steps you want the walkers to take (default = 100): "))
 except:
     steps = 100
 
@@ -858,7 +899,7 @@ sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(r_data, v_c_data, 
 
 print ("\n#####################################################################\n")
 try:
-    Round = int(input("Enter the number of times you want GalRotpy to run (default = 1):\n"))
+    Round = int(input("Enter the number of times you want GalRotpy to run (default = 1): "))
 except:
     Round = 1
 
@@ -872,19 +913,15 @@ time0 = time.time()
 if Round == 1:
     #with Pool() as pool:
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
-    star= time.time()
     sampler.run_mcmc(pos_in, steps, progress=True)
-    end = time.time()
-    multi_time = end - star
-    print("Multiprocessing took {0:.1f} seconds".format(multi_time))
     print ("It took ", (time.time()-time0)/60, "minutes\n")
 
 if Round >1:
-
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
     for j in range(Round-1):
         ti=time.time()
         PARA=[]
-        p0, lp, _  = sampler.run_mcmc(pos_in, steps)
+        p0, lp, _  = sampler.run_mcmc(pos_in, steps, progress = True)
         SAMPLES = sampler.chain[:, int(0.5*steps):, :].reshape((-1, ndim))
         for i in range(ndim):
             mcmc = np.percentile(SAMPLES[:, i], [50.-0.5*68, 50., 50.+0.5*68])
@@ -898,7 +935,7 @@ if Round >1:
     ti=time.time()
     if Round > 1:
         steps=3*steps
-    p0, lp, _  = sampler.run_mcmc(pos_in, steps)
+    p0, lp, _  = sampler.run_mcmc(pos_in, steps, progress = True)
     print("Run " + str(Round) + " done")
     print ("Time: ", (time.time()-ti)/60, "minutes\n")
     print ("It took ", (time.time()-time0)/60, "minutes\n")
@@ -975,7 +1012,7 @@ bprev = Button(axprev, 'Previous', color=axcolor)
 bprev.on_clicked(callback.prev)
 
 def burn(event):
-    plt.close()
+    plt.close('all')
 
 
 resetax = fig.add_axes((0.45, 0.05, 0.1, 0.075))
@@ -988,7 +1025,7 @@ plt.show()
 # Nwalkers and Steps
 
 try:
-    burn_in = int(input("Enter the number of steps you want to burn-in (default = 1):\n"))
+    burn_in = int(input("Enter the number of steps you want to burn-in (default = 1): "))
 except:
     burn_in = 1
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1030,10 +1067,6 @@ H_0 = (67.8/1000)*(aux2/(units.s*units.kpc)) # Planck 2016
 G = 6.67408e-11*(aux1**3/(units.s**2*aux3))
 rho_c = 3.*H_0**2/(8.*np.pi*G)
 """
-
-H_0 =  2.1972483582604943e-18 #1 / s
-G =  4.517103050001136e-39 #kpc^3 / (s^2 solMass)
-rho_c =  127.5791469578729 #solMass / kpc^3
 
 # NFW
 def eq_nfw(x, rho_0, rho_c):
@@ -1154,7 +1187,6 @@ for i in range(ndim):
 r=np.linspace(0.001, 1.02*np.amax(r_data),10000)
 curva = model(fit_para, r)
 nchi2 = np.sum(((model(fit_para, r_data) - v_c_data)/v_c_err_data)**2)/(N_data - ndim)
-print("chi=", nchi2)
 np.warnings.filterwarnings('ignore')
 plt.figure(figsize=(6, 6))
 
@@ -1257,7 +1289,6 @@ if chk[4]==True:
     table_para.append(r"X");    table_units.append(r"---")
     table_para.append(r"M_h");    table_units.append(r"M_Sun")
 
-    
 if chk[5]==True:
     index.append(r"BURKERT HALO"); index.append(r"---"); index.append(r"---"); index.append(r"---")
     
@@ -1265,12 +1296,17 @@ if chk[5]==True:
     table_para.append(r"rho_0");    table_units.append(r"M_Sun/kpc^3")
     table_para.append(r"X");    table_units.append(r"---")
     table_para.append(r"M_h");    table_units.append(r"M_Sun")
-
     
 for i in range(len(para)):
     table_data.append([table_para[i], table_units[i], paran95[i], paran68[i], para[i], parap68[i], parap95[i]])
 
-column_name = [r"PARAMETER", r"UNITS", r"95%(-)", r"68%(-)", r"FIT", r"68%(+)", r"95%(+)"]    
+if chk[4]==True or chk[5]==True:
+    index.append(r"CRITICAL OVERDENSITY")
+    table_data.append([Delta_c, "---", "---", "---", "---", "---", "---"])
+index.append(r"CHI^2")
+table_data.append([nchi2, "---", "---", "---", "---", "---", "---"])
+
+column_name = ["PARAMETER", r"UNITS", r"95%(-)", r"68%(-)", r"FIT", r"68%(+)", r"95%(+)"]    
 table_p = pd.DataFrame(table_data, index=index, columns=column_name)
 table_p.to_csv("final_params.txt", sep='\t', encoding='utf-8')
 print (table_p)
