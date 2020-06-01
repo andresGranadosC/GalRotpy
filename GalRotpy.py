@@ -44,73 +44,76 @@ from multiprocessing import Pool
 import sys
 
 
-ALLOWED_ARGS = ["bulge", "disk", "halo"]
+ALLOWED_OPTIONS = [{'bulge', 'halo'}, {'disk', 'halo'}, {'bulge', 'disk', 'halo'}]
 ALLOWED_POTENTIALS = ["bulge", "disk", "thickDisk", "expDisk", "halo", "burkert"]
 
 
 np.warnings.filterwarnings('ignore')
 
-#HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
-#HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 
-# PART 1: Base code
 
-#HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
-#HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+def boolString_to_bool(boolString):
+    if boolString == 'True':
+        return True
+    elif boolString == 'False':
+        return False
+    else:
+        return None
 
-# Here we load the needed data
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Initial parameters and arguments parsing:
+
+rot_curve_file = None
+has_gui = False
+has_guess = False
+guess_table = 'init_guess_params.txt'
+
+optional_potentials = set()
+
+warnings_args = []
+
+complete_args = sys.argv
+print("complete_args-------", complete_args)
+for (i, arg) in enumerate(complete_args):
+    print(arg)
+    if i == 1:
+        rot_curve_file = arg
+        warnings_args.append("Using '"+rot_curve_file+"' as the rotation curve file.")
+    if ('--gui' == arg) and (i > 1):
+        has_gui = has_gui or True
+    if '--guess' in arg:
+        guess_arg = arg.split(sep='=')
+        if len(guess_arg) == 2:
+            guess_table = guess_arg[-1]
+            has_guess = has_guess or True
+        
+        if len(optional_potentials) > 0:
+            warnings_args.append("You will use '--guess' option but some potentials ('bulge', 'disk' or 'halo') are in your args too. There will be used the guess txt file.")
+            
+    if 'bulge' == arg:
+        optional_potentials.add('bulge')
+    if 'disk' == arg:
+        optional_potentials.add('disk')
+    if 'halo' == arg:
+        optional_potentials.add('halo')
+
+if len(warnings_args) > 0:
+    print("Warning: ", warnings_args)
+
 
 try:
-    if len(sys.argv) == 1:
-        raise Exception('Error: Rotation curve file not found')
+    if rot_curve_file is None:
+        raise Exception('Error: Rotation curve file not specified in GalRotpy arguments')
     else:
-        tt=Table.Table.read(sys.argv[1], format='ascii.tab') # Rotation curve
+        tt=Table.Table.read(rot_curve_file, format='ascii.tab') # Rotation curve
 except Exception as error:
     print(error)
     sys.exit()
 except:
-    print("Error: Rotation curve file ", sys.argv[1]," not readable or corrupt. Please read the documentation for rotation file specifications.")
+    print("Error: Rotation curve file ", rot_curve_file," not readable or corrupt. Please read the documentation for rotation file specifications.")
     sys.exit()
 
-data_rows = [('BULGE', 110000000.0, 1.0, 0.0, 20, 0.495, 70),
-             ('THIN DISK', 3900000000.0, 1.0, 5.3, 90, 0.25, 1),
-             ('THICK DISK', 39000000000.0, 0.5, 2.6, 20, 0.8, 1),
-             ('EXP DISK', 500.0, 0.5, 5.3, 90, 0.0, 0),
-             ('DARK HALO', 140000000000.0, 1.0, 13.0, 90, 0.0, 0),
-             ('BURKERT HALO', 8000000.0, 1.0, 20.0, 90, 0.0, 0)]
-input_params = Table.Table(rows=data_rows, names=('component', 'mass', 'threshold_mass', 'a (kpc)', 'threshold_a', 'b (kpc)', 'threshold_b'))
 
-def input_component(component, guess_mass, guess_a, guess_b):
-    
-    component_mass, component_scale_a, component_scale_b = guess_mass, guess_a, guess_b
-    
-    print('Set the guess parameters for', component)
-    try:
-        component_mass = float(input('Mass (in M_sun):'))
-    except:
-        print('No valid Mass for', component, '. It will be taken the default mass:', component_mass, 'M_sun')
-    
-    
-    try:
-        component_scale_a = float(input('Radial Scale Length (in kpc):'))
-    except:
-        print('No valid Radial Scale Length for', component, '. It will be taken the default Radial Scale Lenght:', component_scale_a, 'kpc')
-
-    if component not in ['EXP DISK', 'DARK HALO', 'BURKERT HALO' ]:
-        try:
-            component_scale_b = float(input('Vertical Scale Length (in kpc):'))
-        except:
-            print('No valid Vertical Scale Length for', component, '. It will be taken the default Vertical Scale Lenght:', component_scale_b, 'kpc')
-    
-    return component_mass, component_scale_a, component_scale_b
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Chi^2
-def chi2(curves):
-    rc = calcRotcurve(curves, r_data, phi=None)*220
-    x2 = np.sum(((v_c_data-rc)/v_c_err_data)**2)
-    return x2
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 x_offset = 0.0  # It defines a radial coordinate offset as user input
 r_0=1*units.kpc # units 
 v_0=220*units.km/units.s # units 
@@ -182,64 +185,95 @@ def ThinDisk_NFW_potentials( r, delta_r, tn_amp, tn_a, tn_b, dark_halo_amp, dark
     return v_circ_comp
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Initial parameters:
+data_rows = [('BULGE', 110000000.0, 1.0, 0.0, 20, 0.495, 70),
+             ('THIN DISK', 3900000000.0, 1.0, 5.3, 90, 0.25, 1),
+             ('THICK DISK', 39000000000.0, 0.5, 2.6, 20, 0.8, 1),
+             ('EXP DISK', 500.0, 0.5, 5.3, 90, 0.0, 0),
+             ('DARK HALO', 140000000000.0, 1.0, 13.0, 90, 0.0, 0),
+             ('BURKERT HALO', 8000000.0, 1.0, 20.0, 90, 0.0, 0)]
+input_params = Table.Table(rows=data_rows, names=('component', 'mass', 'threshold_mass', 'a (kpc)', 'threshold_a', 'b (kpc)', 'threshold_b'))
 
-c_bulge, amp1, delta_mass_bulge, a1, delta_radial_bulge, b1, delta_vertical_bulge = input_params[0]
-c_tn, amp2, delta_mass_tn, a2, delta_radial_tn, b2, delta_vertical_tn = input_params[1]
-c_tk, amp3, delta_mass_tk, a3, delta_radial_tk, b3, delta_vertical_tk = input_params[2]
-c_ex, amp4, delta_mass_ex, h_r, delta_radial_ex, vertical_ex, delta_vertical_ex = input_params[3]
-c_dh, amp5, delta_mass_dh, a5, delta_radial_dh, b5, delta_vertical_dh = input_params[4]
-c_bh, amp6, delta_mass_bh, a6, delta_radial_bh, b6, delta_vertical_bh = input_params[5]
+c_bulge, amp1, delta_mass_bulge, a1, delta_radial_bulge, b1, delta_vertical_bulge, include_bulge = *input_params[0], True
+c_tn, amp2, delta_mass_tn, a2, delta_radial_tn, b2, delta_vertical_tn, include_tn = *input_params[1], True
+c_tk, amp3, delta_mass_tk, a3, delta_radial_tk, b3, delta_vertical_tk, include_tk = *input_params[2], True
+c_ex, amp4, delta_mass_ex, h_r, delta_radial_ex, vertical_ex, delta_vertical_ex, include_ex = *input_params[3], True
+c_dh, amp5, delta_mass_dh, a5, delta_radial_dh, b5, delta_vertical_dh, include_dh = *input_params[4], True
+c_bh, amp6, delta_mass_bh, a6, delta_radial_bh, b6, delta_vertical_bh, include_bh = *input_params[5], True
 
-valid_argv = True
-visibility = [True, True, True, True, True, True]
-if (len(sys.argv) > 2):
-    for (i, arg) in enumerate(ALLOWED_POTENTIALS):
-        if arg in sys.argv:
+visibility = [include_bulge, include_tn, include_tk, include_ex, include_dh, include_bh]
+
+if has_guess:
+    print('Using guess table', guess_table)
+    try:
+        init_guess_params = Table.Table.read(guess_table, format='ascii.tab')
+
+        c_bulge, amp1, a1, b1, include_bulge = init_guess_params[0]
+        c_tn, amp2, a2, b2, include_tn = init_guess_params[1]
+        c_tk, amp3, a3, b3, include_tk = init_guess_params[2]
+        c_ex, amp4, h_r, vertical_ex, include_ex = init_guess_params[3]
+        c_dh, amp5, a5, b5, include_dh = init_guess_params[4]
+        c_bh, amp6, a6, b6, include_bh = init_guess_params[5]
+        visibility = [ boolString_to_bool(include_bulge), boolString_to_bool(include_tn), boolString_to_bool(include_tk), boolString_to_bool(include_ex), boolString_to_bool(include_dh), boolString_to_bool(include_bh)]
+    except:
+        print("Error: Guess file ", guess_table," not readable or corrupt. Please read the documentation for rotation file specifications.")
+        sys.exit()
+
+elif optional_potentials in ALLOWED_OPTIONS:
+    print('Using optional potentials', optional_potentials)
+    for (i, potential) in enumerate(ALLOWED_POTENTIALS):
+        if potential in optional_potentials:
             visibility[i] = True
         else:
             visibility[i] = False
+    
+    if optional_potentials == ALLOWED_OPTIONS[0]:
+        bounds = (( -10, amp1/(10**delta_mass_bulge), a1, b1*(1-0.01*delta_vertical_bulge), amp5/(10*delta_mass_dh), a5*(1-0.01*delta_radial_dh)  ), 
+                (  10, amp1*(10**delta_mass_bulge), 0.1*delta_radial_bulge,  b1*(1+0.01*delta_vertical_bulge), amp5*(10**delta_mass_dh), a5*(1+0.01*delta_radial_dh)  ) )
 
-    for i in sys.argv[2:]:
-        if i not in ALLOWED_ARGS:
-            valid_argv = valid_argv and False
-    if valid_argv:
-        # Rotation curve fitting
-        if ("bulge" in sys.argv) and ("halo" in sys.argv):
-            bounds = (( -10, amp1/(10**delta_mass_bulge), a1, b1*(1-0.01*delta_vertical_bulge), amp5/(10*delta_mass_dh), a5*(1-0.01*delta_radial_dh)  ), 
-                    (  10, amp1*(10**delta_mass_bulge), 0.1*delta_radial_bulge,  b1*(1+0.01*delta_vertical_bulge), amp5*(10**delta_mass_dh), a5*(1+0.01*delta_radial_dh)  ) )
+        popt, pcov = curve_fit(Bulge_NFW_potentials, 
+                    r_data, v_c_data.data, 
+                    p0=[x_offset, amp1, a1, b1, amp5, a5 ],
+                    bounds=bounds )
+        x_offset, amp1, a1, b1, amp5, a5 = popt
+    if optional_potentials == ALLOWED_OPTIONS[2]:
+        bounds = (( -10, amp1/(10**delta_mass_bulge), a1, b1*(1-0.01*delta_vertical_bulge), amp2/(10**delta_mass_tn), a2*(1-0.01*delta_radial_tn), b2/(10**delta_vertical_tn), amp5/(10*delta_mass_dh), a5*(1-0.01*delta_radial_dh)  ), 
+                (  10, amp1*(10**delta_mass_bulge), 0.1*delta_radial_bulge,  b1*(1+0.01*delta_vertical_bulge), amp2*(10**delta_mass_tn), a2*(1+0.01*delta_radial_tn), b2*(10**delta_vertical_tn), amp5*(10**delta_mass_dh), a5*(1+0.01*delta_radial_dh)  ) )
 
-            popt, pcov = curve_fit(Bulge_NFW_potentials, 
-                       r_data, v_c_data.data, 
-                       p0=[x_offset, amp1, a1, b1, amp5, a5 ],
-                       bounds=bounds )
-            x_offset, amp1, a1, b1, amp5, a5 = popt
-        if ("bulge" in sys.argv) and ("disk" in sys.argv) and ("halo" in sys.argv):
-            bounds = (( -10, amp1/(10**delta_mass_bulge), a1, b1*(1-0.01*delta_vertical_bulge), amp2/(10**delta_mass_tn), a2*(1-0.01*delta_radial_tn), b2/(10**delta_vertical_tn), amp5/(10*delta_mass_dh), a5*(1-0.01*delta_radial_dh)  ), 
-                    (  10, amp1*(10**delta_mass_bulge), 0.1*delta_radial_bulge,  b1*(1+0.01*delta_vertical_bulge), amp2*(10**delta_mass_tn), a2*(1+0.01*delta_radial_tn), b2*(10**delta_vertical_tn), amp5*(10**delta_mass_dh), a5*(1+0.01*delta_radial_dh)  ) )
+        popt, pcov = curve_fit(Bulge_ThinDisk_NFW_potentials, 
+                    r_data, v_c_data.data, 
+                    p0=[x_offset, amp1, a1, b1, amp2, a2, b2, amp5, a5 ],
+                    bounds=bounds )
+        x_offset, amp1, a1, b1, amp2, a2, b2, amp5, a5 = popt
+    if optional_potentials == ALLOWED_OPTIONS[1]:
+        bounds = (( -10, amp2/(10**delta_mass_tn), a2*(1-0.01*delta_radial_tn), b2/(10**delta_vertical_tn), amp5/(10*delta_mass_dh), a5*(1-0.01*delta_radial_dh)  ), 
+                (  10, amp2*(10**delta_mass_tn), a2*(1+0.01*delta_radial_tn), b2*(10**delta_vertical_tn), amp5*(10**delta_mass_dh), a5*(1+0.01*delta_radial_dh)  ) )
 
-            popt, pcov = curve_fit(Bulge_ThinDisk_NFW_potentials, 
-                       r_data, v_c_data.data, 
-                       p0=[x_offset, amp1, a1, b1, amp2, a2, b2, amp5, a5 ],
-                       bounds=bounds )
-            x_offset, amp1, a1, b1, amp2, a2, b2, amp5, a5 = popt
-        if ("disk" in sys.argv) and ("halo" in sys.argv):
-            bounds = (( -10, amp2/(10**delta_mass_tn), a2*(1-0.01*delta_radial_tn), b2/(10**delta_vertical_tn), amp5/(10*delta_mass_dh), a5*(1-0.01*delta_radial_dh)  ), 
-                  (  10, amp2*(10**delta_mass_tn), a2*(1+0.01*delta_radial_tn), b2*(10**delta_vertical_tn), amp5*(10**delta_mass_dh), a5*(1+0.01*delta_radial_dh)  ) )
+        popt, pcov = curve_fit(ThinDisk_NFW_potentials, 
+                    r_data, v_c_data.data, 
+                    p0=[x_offset,  amp2, a2, b2, amp5, a5 ],
+                    bounds=bounds )
+        x_offset, amp2, a2, b2, amp5, a5 = popt
 
-            popt, pcov = curve_fit(ThinDisk_NFW_potentials, 
-                       r_data, v_c_data.data, 
-                       p0=[x_offset,  amp2, a2, b2, amp5, a5 ],
-                       bounds=bounds )
-            x_offset, amp2, a2, b2, amp5, a5 = popt
-else:
-    amp1, a1, b1 = input_component(c_bulge, amp1, a1, b1)
-    amp2, a2, b2 = input_component(c_tn, amp2, a2, b2)
-    amp3, a3, b3 = input_component(c_tk, amp3, a3, b3)
-    amp4, h_r, vertical_ex = input_component(c_ex, amp4, h_r, vertical_ex)
-    amp5, a5, b5 = input_component(c_dh, amp5, a5, b5)
-    amp6, a6, b6 = input_component(c_bh, amp6, a6, b6)
+
+print("visibility-----------", visibility)
+
+#HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+#HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+
+# PART 1: Base code
+
+#HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+#HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Chi^2
+def chi2(curves):
+    rc = calcRotcurve(curves, r_data, phi=None)*220
+    x2 = np.sum(((v_c_data-rc)/v_c_err_data)**2)
+    return x2
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Here we calculate de rotation curve for each of the potentials used
@@ -699,10 +733,10 @@ else:
 compnts = ['BULGE','THIN DISC','THICK DISC','EXP. DISC', 'DARK HALO', 'BURKERT HALO']
 masses = [amp1, amp2, amp3, amp4, amp5, amp6]
 aa = [a1, a2, a3, h_r, a5, a6]
-bb = [b1, b2, b3, "None", "None", "None"]
+bb = [b1, b2, b3, 0, 0, 0]
 
 init_parameters = Table.Table([compnts,masses, aa,bb, chk], names=('component', 'mass', 'a (kpc)', 'b (kpc)', 'checked'))
-init_parameters.write('init_guess_params.txt', format='ascii.tab', overwrite=True)
+init_parameters.write(guess_table, format='ascii.tab', overwrite=True)
 
 #HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 #HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
