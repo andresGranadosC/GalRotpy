@@ -24,11 +24,11 @@ GalRotpy can give a first approximation of the galaxy rotation curve using the f
 GalRotpy can be used in the following ways:
 
 ```sh
-$ python3 GalRotpy rot_curve.txt [bulge halo] | [bulge disk halo] | [disk halo]
+$ python3 GalRotpy.py rot_curve.txt [bulge halo] | [bulge disk halo] | [disk halo]
 ```
 or
 ```sh
-$ python3 GalRotpy rot_curve.txt --guess=init_guess_params.txt
+$ python3 GalRotpy.py rot_curve.txt --guess=init_guess_params.txt
 ```
 
 
