@@ -9,7 +9,7 @@ GalRotpy allows to model the dynamical mass of disk-like galaxies. It makes a pa
 GalRotpy requires essentially the [galpy](https://github.com/jobovy/galpy) package and the three fundamental Python3 packages: [Numpy](http://www.numpy.org/), [Scipy](https://www.scipy.org/) and [Matplotlib](http://matplotlib.org/). GalRotpy doesn't support Python2.
 
 
-## About the rotation curve and mass component parametrization. Gravitational potentials available:
+## Available gravitational potentials:
 
 GalRotpy can give a first approximation of the galaxy rotation curve using the following gravitational potential schemas:
 
@@ -21,16 +21,21 @@ GalRotpy can give a first approximation of the galaxy rotation curve using the f
 
 ## How to use GalRotpy
 
-Run GalRotpy with the following parameters:
+GalRotpy can be used in the following ways:
 
 ```sh
-$ python3 GalRotpy rot_curve.txt [bulge halo] | [bulge disk halo] | [disk halo]
+$ python3 GalRotpy.py rot_curve.txt [bulge halo] | [bulge disk halo] | [disk halo]
+```
+or
+```sh
+$ python3 GalRotpy.py rot_curve.txt --guess=init_guess_params.txt
 ```
 
- * **rot_curve.txt**  is the file that contains the rotation curve in three columns:
-    * r (galactocentric distance in kpc)
-    * vel (the speed in km/s at each distance r)
-    * e_vel (the uncertainty for the circular velocity at each distance r)
+
+ * **rot_curve.txt**  it is mandatory to specify the file that contains the rotation curve. There must be three columns separated by tabulation character:
+    * r (galactocentric distance in ![](https://latex.codecogs.com/svg.latex?kpc) )
+    * vel (the circular speed in ![](https://latex.codecogs.com/svg.latex?km/s) at each distance r )
+    * e_vel (the uncertainty for the circular speed in ![](https://latex.codecogs.com/svg.latex?km/s) at each distance r )
 
 |r| vel|    e_vel| 
 | ------ | ------ | ------ |
@@ -40,17 +45,21 @@ $ python3 GalRotpy rot_curve.txt [bulge halo] | [bulge disk halo] | [disk halo]
 |   0.73|	55.1|	3.3|
 |   ...|    ...|	...|
 
-* **[bulge halo] | [bulge disk halo] | [disk halo]** optionally to set a first guess of the potential composition to reproduce the given rotation curve: bulge and halo or bulge and disk and halo or disk and halo
-* Due to the last parameters are optional, if you don't enter any of the options above, GalRotpy will request you to introduce the following set of parameters:
+* **[bulge halo] | [bulge disk halo] | [disk halo]** are the available options to make a first guess of the potential composition to reproduce the given rotation curve: bulge and halo or bulge and disk and halo or disk and halo
+* **--guess=init_guess_params.txt** if you don't enter any of the options above, GalRotpy needs to specify the guess table where earch component will be used:
 
-|Component| Mass|   Parameter a|    Parameter b|
-| ------ | ------ | ------ | ------ |
-|'BULGE'|110000000.0|0.0|0.495|
-|'THIN DISK'|3900000000.0|5.3|0.25|
-|'THICK DISK'|39000000000.0|2.6|0.8|
-|'EXP DISK'|500.0|5.3|------|
-|'DARK HALO'|140000000000.0|13.0|------|
-|'BURKERT HALO'|8000000.0|20.0|------|
+|component| mass|   a (kpc)|	b (kpc)|	checked|
+| ------ | ------ | ------ | ------ | ------ |
+|'BULGE'|110000000.0|0.0|0.495| True |
+|'THIN DISK'|3900000000.0|5.3|0.25| False |
+|'THICK DISK'|39000000000.0|2.6|0.8| True |
+|'EXP DISK'|500.0|5.3|------| False |
+|'DARK HALO'|140000000000.0|13.0|------| True |
+|'BURKERT HALO'|8000000.0|20.0|------| False |
+
+* where the **mass** column is in units of ![](https://latex.codecogs.com/svg.latex?M_\odot) for 'BULGE', 'THIN DISK', 'THICK DISK', 'DARK HALO', surface mass density ![](https://latex.codecogs.com/svg.latex?M_\odot/pc^2) for 'EXP DISK', and ![](https://latex.codecogs.com/svg.latex?M_\odot/kpc^3) for 'BURKERT HALO'.
+* **checked** column is the boolean value for including that gravitational potential component.
+
 
 Finally there is shown the graphic composition of rotation curve. This is an interactive user aided tool for include or exclude the available components of the gravitational potential, then graphically recover the dynamic mass composition for the observed rotation curve and ccomputed ![](https://latex.codecogs.com/svg.latex?\chi%5E2) value:
 
@@ -96,3 +105,4 @@ GalRotpy produces the following output files:
  * to bound the contribution of each mass component given its gravitational potential parameters.
 
 The related pre-print reference: [GalRotpy: an educational tool to understand and parametrize the rotation curve and gravitational potential of disk-like galaxies](https://arxiv.org/abs/1705.01665)
+
