@@ -2,15 +2,25 @@
 
 import sys
 
-print(len(sys.argv))
+import os
 
-print(sys.argv)
+# define the name of the directory to be created
+path = sys.argv[1]
+print(path)
 
-print ( (str(sys.argv[1]), "is delicious. Would you like to try some?\n") )
+try:
+    os.mkdir(path)
+except OSError:
+    print ("Creation of the directory %s failed" % path)
+else:
+    print ("Successfully created the directory %s " % path)
 
-print ("Or would you rather have the", str(sys.argv[2]) , "?\n")
+#print(sys.argv)
 
-if (len(sys.argv)>3 ):
+#print ( (str(sys.argv[1]), "is delicious. Would you like to try some?\n") )
 
-    print ("Usage details: try_this.py <input1> <input2>")
-    sys.exit
+#print ("Or would you rather have the", str(sys.argv[2]) , "?\n")
+
+#if (len(sys.argv)>3 ):
+#    print ("Usage details: try_this.py <input1> <input2>")
+#    sys.exit

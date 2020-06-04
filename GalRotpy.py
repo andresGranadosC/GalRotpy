@@ -42,6 +42,7 @@ import multiprocessing as mp
 from scipy.optimize import fsolve, minimize, curve_fit
 from multiprocessing import Pool
 import sys
+import os
 
 
 ALLOWED_OPTIONS = [{'bulge', 'halo'}, {'disk', 'halo'}, {'bulge', 'disk', 'halo'}]
@@ -67,6 +68,7 @@ rot_curve_file = None
 has_gui = False
 has_guess = False
 guess_table = 'init_guess_params.txt'
+out_folder = '.'
 
 optional_potentials = set()
 
@@ -86,10 +88,15 @@ for (i, arg) in enumerate(complete_args):
         if len(guess_arg) == 2:
             guess_table = guess_arg[-1]
             has_guess = has_guess or True
-        
         if len(optional_potentials) > 0:
             warnings_args.append("You will use '--guess' option but some potentials ('bulge', 'disk' or 'halo') are in your args too. There will be used the guess txt file.")
-            
+
+    if '--outfolder' in arg:
+        outfolder_arg = arg.split(sep='=')
+        if len(outfolder_arg) == 2:
+            out_folder = './'+outfolder_arg[-1]
+            warnings_args.append("Saving output files into %s folder" % out_folder)
+
     if 'bulge' == arg:
         optional_potentials.add('bulge')
     if 'disk' == arg:
@@ -99,6 +106,18 @@ for (i, arg) in enumerate(complete_args):
 
 if len(warnings_args) > 0:
     print("Warning: ", warnings_args)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create a directory to save all outputs
+try:
+    os.mkdir(out_folder)
+except FileExistsError:
+    print ("Overwriting on directory %s" % out_folder)
+except OSError:
+    print ("Creation of the directory %s failed" % out_folder)
+else:
+    print ("Successfully created the directory %s " % out_folder)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 try:
@@ -1089,7 +1108,8 @@ for yi in range(ndim):
         ax = axes[yi, xi]
         ax.tick_params(axis='both', which='major', labelsize=14.5, pad=3, direction = "in")
         
-fig.savefig("Conf_Regions.pdf",bbox_inches='tight',pad_inches=0.15)
+conf_Regions_file = out_folder+"/Conf_Regions.pdf"
+fig.savefig(conf_Regions_file,bbox_inches='tight',pad_inches=0.15)
 
 #Here we obtain the quantities of interest, which will be include in a table as output
 
@@ -1280,7 +1300,8 @@ plt.xlim(0., 1.02*np.amax(r_data))
 plt.ylim(0., 1.1*np.amax(v_c_data))
 plt.tight_layout()
 plt.legend(loc="lower right",fontsize=15)
-plt.savefig("GalRotpy_fit.pdf")
+galRotpy_fit_file = out_folder+"/GalRotpy_fit.pdf"
+plt.savefig(galRotpy_fit_file)
 
 print ("\n#####################################################################\n")
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1342,7 +1363,8 @@ table_data.append([nchi2, "---", "---", "---", "---", "---", "---"])
 
 column_name = ["PARAMETER", r"UNITS", r"95%(-)", r"68%(-)", r"FIT", r"68%(+)", r"95%(+)"]    
 table_p = pd.DataFrame(table_data, index=index, columns=column_name)
-table_p.to_csv("final_params.txt", sep='\t', encoding='utf-8')
+final_params_file = out_folder+"/final_params.txt"
+table_p.to_csv(final_params_file, sep='\t', encoding='utf-8')
 print (table_p)
 print ("\n#####################################################################")
 print ("\nDone")
