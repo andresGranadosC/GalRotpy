@@ -1,0 +1,6 @@
+astropy
+emcee
+corner
+pandas
+ipywidgets
+galpy
